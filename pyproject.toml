@@ -1,6 +1,6 @@
 [project]
 name = "orcaslicer-plugin-prusa"
-version = "0.2.0"
+version = "0.3.0b1"
 description = "OrcaSlicer plugin for Prusa Buddy printers (PrusaLink and Prusa Connect)"
 readme = "README.md"
 license = "AGPL-3.0-only"

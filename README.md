@@ -45,7 +45,7 @@ It follows Orca's light and dark themes.
 
 1. Use an OrcaSlicer build with Python plugin support, tested against 2.5RC . It needs the plugin API with the `printer_agent` and `pages` capabilities.
 2. Install the plugin in one of two ways:
-   - **As a package:** get `prusa_plugin.whl` (build it with `uv run python scripts/build_wheel.py`, or download the `prusa_plugin-wheel` artifact from a [CI run](https://github.com/thijse/orcaslicer-plugin-prusa/actions)). In OrcaSlicer, open **Plugins**, choose **Install plugin**, and pick the file. In the plugin list it shows as **orcaslicer-plugin-prusa**.
+   - **As a package:** download `prusa_plugin.whl` from [Releases](https://github.com/thijse/orcaslicer-plugin-prusa/releases), or build it with `uv run python scripts/build_wheel.py`. In OrcaSlicer, open **Plugins**, choose **Install plugin**, and pick the file. In the plugin list it shows as **orcaslicer-plugin-prusa**.
    - **As a folder:** download this repository (**Code → Download ZIP**, or `git clone`) and continue with step 3.
 
    Use one or the other: both install as the same plugin, with the same settings folder.

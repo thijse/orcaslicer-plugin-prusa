@@ -6,7 +6,7 @@
 # name = "Prusa Integration"
 # description = "Printer agent and Prusa tab for Buddy-firmware Prusa printers (PrusaLink + Prusa Connect)."
 # author = "Thijs"
-# version = "0.2.0"
+# version = "0.3.0b1"
 # ///
 """OrcaSlicer plugin entry: Prusa printer agent (Device tab, filament sync) and a Prusa tab."""
 

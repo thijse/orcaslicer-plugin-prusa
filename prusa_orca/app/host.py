@@ -21,7 +21,7 @@ def _load_orca() -> Any:
 
 orca: Any = _load_orca()
 
-__version__ = "0.2.0"
+__version__ = "0.3.0b1"
 AGENT_ID = "prusa3d_plugin"
 AGENT_NAME = "Prusa (Link + Connect)"
 PAGE_NAME = "Prusa"

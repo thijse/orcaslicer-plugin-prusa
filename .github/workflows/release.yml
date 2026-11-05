@@ -1,0 +1,52 @@
+name: Release
+
+# Push a tag "v<version>" (the version in pyproject.toml) to build prusa_plugin.whl and publish it.
+# A version with a/b/rc in it (0.2.0b1) becomes a pre-release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Check the tag matches the version
+        run: |
+          version=$(uv run --no-sync python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match version ${version} in pyproject.toml"; exit 1
+          fi
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+      - name: Build and check the wheel
+        run: uv run --no-sync python scripts/build_wheel.py
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          if echo "${VERSION}" | grep -Eq '(a|b|rc)[0-9]+$'; then prerelease="--prerelease"; fi
+          cat > notes.md <<'EOF'
+          ## Install
+
+          1. You need an OrcaSlicer build with Python plugin support (2.5 development builds). The released 2.4 does not load plugins.
+          2. Download **prusa_plugin.whl** below. Keep the file name as it is.
+          3. In OrcaSlicer, open **Plugins**, click the arrow next to **Browse plugins**, choose **Install local plugin** and pick the file.
+          4. Tick the plugin to turn it on and allow the permissions it asks for.
+          5. Turn on **Preferences > Developer > Use printer agents instead of print hosts**.
+          6. Open the **Prusa** tab; the setup wizard takes you through the rest.
+
+          Already have an older version? Install the new file the same way; OrcaSlicer replaces it and asks for the permissions again.
+          Your settings stay. **Prusa tab > Settings > Plugin** shows which version runs.
+
+          Report problems in [Issues](https://github.com/thijse/orcaslicer-plugin-prusa/issues), with `prusa_plugin.log` from OrcaSlicer's `orca_plugins/plugin_data/prusa_plugin/` folder.
+          EOF
+          gh release create "${GITHUB_REF_NAME}" dist/prusa_plugin.whl \
+            --title "${GITHUB_REF_NAME}" --notes-file notes.md --generate-notes ${prerelease}
