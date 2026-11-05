@@ -124,3 +124,8 @@ Slot colours are the project's `filament_colour` (the coloured number box in the
 - Python can't cancel a blocked request: after a timeout the worker keeps running until the socket timeout (15 s for Connect) and its late answer is logged and dropped.
 - Testing: `"debug": {"connect_delay": 25}` or `{"connect_down": true}` in `prusa_local.json` simulates a slow or unreachable Connect. It is read at startup and when settings are saved; remove it and restart Orca to go back to normal.
 - A failed read of `supported-commands` is retried after 60 s, not on every page poll.
+
+## 23. Permission prompts for Python's own bytecode cache
+Orca points Python's bytecode cache at `<data_dir>/python/pycache` (`PythonInterpreter.cpp`). When a plugin first imports a standard-library module, Python compiles it and writes the `.pyc` through `_write_atomic`, which opens the file by descriptor. The audit hook sees an `open` event with no path, so it can't match the cache folder as an allowed root and asks the user for `FsReadWrite:open` once per module, with no target shown. A grant in `request_permissions()` can't cover it, so the prompts can't be batched.
+- The plugin imports everything it needs at load (the logging file handler was the late one), so these writes happen during the plugin's import and not on its first use.
+- Upstream fix: don't attribute writes to the interpreter's own bytecode cache to the plugin (e.g. skip `open` events raised from `importlib._bootstrap_external`), or allow fd-based opens of a file created inside an allowed root.

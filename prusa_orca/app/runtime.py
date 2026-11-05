@@ -9,6 +9,9 @@ import socket
 import threading
 import time
 import urllib.parse
+
+# Imported at load: a first import later compiles stdlib modules, and each bytecode write asks the user for an "open" permission.
+from logging.handlers import RotatingFileHandler
 from typing import Any
 
 from .. import printers
@@ -90,8 +93,6 @@ class Runtime:
     @staticmethod
     def _attach_log_file(data_dir: str) -> None:
         try:
-            from logging.handlers import RotatingFileHandler
-
             os.makedirs(data_dir, exist_ok=True)
             handler = RotatingFileHandler(
                 os.path.join(data_dir, "prusa_plugin.log"), maxBytes=1_000_000, backupCount=2, encoding="utf-8"
