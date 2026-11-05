@@ -112,6 +112,7 @@ Any help on making the plugin more robust and feature complete is very welcome. 
 - **Code layout:** [docs/architecture.md](docs/architecture.md). The core logic is plain Python with tests; only `prusa_orca/app` talks to Orca.
 - **Checks:** install [uv](https://docs.astral.sh/uv/), then `uv sync` and `uv run python scripts/check.py`. This runs Ruff, basedpyright, the layer contracts and pytest, the same as CI does on every push. Conventions for contributors and coding agents are in [AGENTS.md](AGENTS.md).
 - **Package:** `uv run python scripts/build_wheel.py` builds `dist/prusa_plugin.whl` and checks it against the rules OrcaSlicer applies to a plugin wheel. CI builds it on every push.
+- **Release:** `uv run python scripts/release.py beta` (or `rc`, `patch`, `minor`, `major`) raises the version, commits, tags and pushes; GitHub Actions then publishes the wheel on the Releases page.
 - **Dev scripts:** the scripts in `tools/` drive a running OrcaSlicer through its MCP server. Set `ORCASLICER_SRC` to your OrcaSlicer source folder.
 
 ## License

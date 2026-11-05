@@ -16,7 +16,7 @@ uv run python scripts/build_wheel.py     # build and check dist/prusa_plugin.whl
 
 The wheel must stay named `prusa_plugin.whl`: OrcaSlicer keys a local plugin by its file stem, and that key names the settings folder and is what presets store. The version is in three places that `build_wheel.py` checks against each other: `pyproject.toml`, the PEP 723 header in `prusa_plugin.py`, and `__version__` in `prusa_orca/app/host.py`.
 
-To release, set the new version in those three places, run `uv lock`, commit, and push a tag `v<version>`. The Release workflow builds the wheel and publishes it; a version ending in `a1`, `b1` or `rc1` becomes a pre-release. Tag only when the user asks.
+To release, run `uv run python scripts/release.py beta|rc|patch|minor|major` (add `--dry-run` to see the new version first). It raises the version in those three places, runs the checks and the wheel build, commits, tags `v<version>` and pushes; the Release workflow then publishes the wheel, as a pre-release for a `b`/`rc` version. Release only when the user asks.
 
 Run `scripts/check.py` before you report a change as done, and fix what it reports.
 
