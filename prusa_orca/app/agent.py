@@ -14,7 +14,7 @@ from ..control import gcode_to_commands
 from ..dialect import build_get_version, build_push_status, limits, tool_mapping_problem
 from ..history import new_record
 from ..model import PrinterTelemetry
-from ..tasks import TaskBusy
+from ..tasks import Task, TaskBusy
 from .host import (
     AGENT_ID,
     AGENT_NAME,
@@ -34,6 +34,11 @@ from .orca_state import _preset_names, _project_path, collect_filament_presets
 from .runtime import current_runtime, runtime
 
 pa = orca.printer_agent
+
+
+def _warn_if_failed(task: Task) -> None:
+    if task.state != "done":
+        warn(f"{task.label}: {task.error}")
 
 
 class PrusaPrinterAgent(pa.PrinterAgentBase):
@@ -282,7 +287,7 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
                 work,
                 kind="job",
                 resource="job",
-                on_done=lambda t: t.state != "done" and warn(f"{t.label}: {t.error}"),
+                on_done=_warn_if_failed,
             )
         except TaskBusy as exc:
             warn(str(exc))
@@ -312,7 +317,7 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
                 work,
                 kind="command",
                 resource=f"tool-{tool_index + 1}",
-                on_done=lambda t: t.state != "done" and warn(f"{t.label}: {t.error}"),
+                on_done=_warn_if_failed,
             )
         except TaskBusy as exc:
             warn(str(exc))

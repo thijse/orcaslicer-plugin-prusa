@@ -15,6 +15,7 @@ import zipfile
 from collections.abc import Callable
 from typing import Any
 
+from ..jsonview import obj, objs
 from ..model import JobState, PrinterTelemetry, RawPrinterState
 from ..phase import interpret_phase
 
@@ -22,9 +23,9 @@ LOG = logging.getLogger("prusa_orca.backends.prusalink")
 
 
 def parse_status(status: dict[str, Any], host: str = "") -> PrinterTelemetry:
-    printer = status.get("printer") or {}
-    job = status.get("job") or {}
-    storage = status.get("storage") or {}
+    printer = obj(status, "printer")
+    job = obj(status, "job")
+    storage = obj(status, "storage")
     try:
         raw_state = RawPrinterState(str(printer.get("state", "UNKNOWN")).upper())
     except ValueError:
@@ -61,7 +62,7 @@ def parse_status(status: dict[str, Any], host: str = "") -> PrinterTelemetry:
 
 
 def apply_job_detail(telemetry: PrinterTelemetry, job: dict[str, Any]) -> None:
-    file = job.get("file") or {}
+    file = obj(job, "file")
     telemetry.job.file_name = str(file.get("name") or "")
     telemetry.job.display_name = str(file.get("display_name") or telemetry.job.file_name)
 
@@ -104,7 +105,7 @@ class PrusaLinkBackend:
             urllib.request.ProxyHandler({}), urllib.request.HTTPDigestAuthHandler(passwords)
         )
 
-    def _get(self, path: str) -> tuple[int, Any]:
+    def _get(self, path: str) -> tuple[int, object]:
         req = urllib.request.Request(self.base_url + path, headers={"Accept": "application/json"})
         try:
             with self._opener.open(req, timeout=self.timeout) as resp:
@@ -128,25 +129,28 @@ class PrusaLinkBackend:
 
     def fetch_status(self) -> PrinterTelemetry | None:
         code, body = self._get("/api/v1/status")
+        status = obj(body)
         if code != 200 or not isinstance(body, dict):
             return None
-        telemetry = parse_status(body, self.host)
-        if body.get("job"):
+        telemetry = parse_status(status, self.host)
+        if status.get("job"):
             # /status names no file; /job does.
-            code, job = self._get("/api/v1/job")
-            if code == 200 and isinstance(job, dict):
+            code, raw = self._get("/api/v1/job")
+            job = obj(raw)
+            if code == 200 and isinstance(raw, dict):
                 apply_job_detail(telemetry, job)
         return telemetry
 
     def fetch_info(self) -> dict[str, Any] | None:
         code, body = self._get("/api/v1/info")
-        return body if code == 200 else None
+        info = obj(body)
+        return info if code == 200 and isinstance(body, dict) else None
 
     def check(self) -> tuple[bool, str]:
         """Whether PrusaLink answers with these credentials, and why not."""
         code, body = self._get("/api/v1/info")
         if code == 200:
-            return True, str((body or {}).get("hostname") or self.host)
+            return True, str(obj(body).get("hostname") or self.host)
         if code in (401, 403):
             return False, "The printer answered, but did not accept the password or API key."
         if code == 0:
@@ -167,7 +171,7 @@ class PrusaLinkBackend:
 
     def storage_path(self) -> str:
         code, body = self._get("/api/v1/storage")
-        for storage in (body or {}).get("storage_list", []) if code == 200 else []:
+        for storage in objs(body, "storage_list") if code == 200 else []:
             if storage.get("available") and not storage.get("read_only"):
                 return storage.get("path", "/usb/").strip("/")
         return "usb"
@@ -186,6 +190,7 @@ class PrusaLinkBackend:
         # Buddy firmware 8.0.1 answers 500 to "Overwrite: ?1" when the file is "busy" (the printer keeps
         # the last uploaded file selected for printing), so never write over a file: use the first free name.
         stem, ext = os.path.splitext(remote_name)
+        name = path = ""
         for n in range(100):
             name = remote_name if n == 0 else f"{stem}_{n}{ext}"
             path = f"/api/v1/files/{storage}/{urllib.parse.quote(name)}"
@@ -227,7 +232,7 @@ class PrusaLinkBackend:
     def list_files(self) -> list[dict[str, Any]]:
         """Print files on the printer's storage, newest first: name (8.3), display_name, m_timestamp."""
         code, body = self._get(f"/api/v1/files/{self.storage_path()}/")
-        files = [f for f in (body or {}).get("children", []) if f.get("type") == "PRINT_FILE"] if code == 200 else []
+        files = [f for f in objs(body, "children") if f.get("type") == "PRINT_FILE"] if code == 200 else []
         return sorted(files, key=lambda f: f.get("m_timestamp") or 0, reverse=True)
 
     def delete_file(self, name: str) -> int:
@@ -240,7 +245,8 @@ class PrusaLinkBackend:
 
     def job_command(self, action: str) -> int:
         """pause, resume or stop the current job."""
-        code, job = self._get("/api/v1/job")
+        code, body = self._get("/api/v1/job")
+        job = obj(body)
         if code != 200 or not job:
             return 404
         if action == "stop":

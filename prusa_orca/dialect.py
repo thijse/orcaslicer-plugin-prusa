@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from .model import PrinterTelemetry, RawPrinterState, ToolState
 
@@ -47,14 +47,14 @@ def map_gcode_state(raw_state: RawPrinterState) -> str:
 
 def build_ams_units(tools: list[ToolState], filament_id_for: Callable[[ToolState], str] | None = None) -> dict[str, Any]:
     """Tools as 4-tray AMS units: tools 1-4 in unit 0, tool 5 in unit 1."""
-    ams_units = []
+    ams_units: list[dict[str, Any]] = []
     ams_exist_bits = 0
     tray_exist_bits = 0
 
     unit_count = (len(tools) + 3) // 4 if tools else 1
     for u_idx in range(unit_count):
         ams_exist_bits |= 1 << u_idx
-        trays = []
+        trays: list[dict[str, Any]] = []
         # Only real tools get a slot: padding slots would sync as extra filaments (5 tools, not 8).
         for s_idx in range(min(4, max(1, len(tools) - u_idx * 4))):
             tool_idx = u_idx * 4 + s_idx
@@ -192,12 +192,14 @@ def tool_mapping_problem(ams_mapping: str) -> str:
     A file printed through PrusaLink uses the tools its G-code names, so filament N must sit in tool N.
     """
     try:
-        slots = json.loads(ams_mapping) if ams_mapping.strip().startswith("[") else []
+        slots: object = json.loads(ams_mapping) if ams_mapping.strip().startswith("[") else []
     except ValueError:
         return ""
-    for index, slot in enumerate(slots):
+    for index, item in enumerate(cast(list[object], slots)):
+        if not isinstance(item, (int, float, str)):
+            continue
         try:
-            slot = int(slot)
+            slot = int(item)
         except (TypeError, ValueError):
             continue
         if 0 <= slot < 254 and slot != index:

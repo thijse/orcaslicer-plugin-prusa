@@ -7,7 +7,9 @@ import os
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import cast
 
+from .jsonview import JsonObj, obj
 from .model import ToolState
 
 
@@ -50,30 +52,35 @@ class FilamentIdResolver:
         return self._by_name
 
     @staticmethod
-    def _read(path: str) -> dict:
+    def _read(path: str) -> JsonObj:
         try:
             with open(path, encoding="utf-8") as f:
-                data = json.load(f)
-            return data if isinstance(data, dict) else {}
+                return obj(json.load(f))
         except (OSError, ValueError):
             return {}
 
     def resolve(self, preset_file: str) -> str:
         if preset_file in self._cache:
             return self._cache[preset_file]
-        path, seen, result = preset_file, set(), ""
+        path, result = preset_file, ""
+        seen: set[str] = set()
         while path and path not in seen:
             seen.add(path)
             data = self._read(path)
             if data.get("filament_id"):
                 result = str(data["filament_id"])
                 break
-            parent = data.get("inherits")
+            parent: object = data.get("inherits")
             if isinstance(parent, list):
-                parent = parent[0] if parent else ""
+                items = cast(list[object], parent)
+                parent = items[0] if items else ""
             # A sibling in the same folder first (system chains), then any vendor (user presets).
             sibling = os.path.join(os.path.dirname(path), f"{parent}.json") if parent else ""
-            path = sibling if sibling and os.path.isfile(sibling) else self._index().get(parent or "", "")
+            if sibling and os.path.isfile(sibling):
+                path = sibling
+            else:
+                key = parent or ""
+                path = self._index().get(key, "") if isinstance(key, str) else ""
         self._cache[preset_file] = result
         return result
 
@@ -93,7 +100,7 @@ def match_preset(tool: ToolState, presets: Iterable[FilamentPreset]) -> Filament
     vendor = _norm(tool.vendor)
     name = _norm(tool.name)
 
-    def score(p: FilamentPreset) -> tuple:
+    def score(p: FilamentPreset) -> tuple[bool, bool, bool, int]:
         base = _norm(p.name.split("@", 1)[0])
         return (
             bool(vendor and name and vendor in base and name in base),
@@ -105,26 +112,26 @@ def match_preset(tool: ToolState, presets: Iterable[FilamentPreset]) -> Filament
     return max(candidates, key=score)
 
 
-def pick_connect_material(nodes: list[dict], vendor: str, name: str, material_type: str, color: str = "") -> dict | None:
+def pick_connect_material(nodes: list[JsonObj], vendor: str, name: str, material_type: str, color: str = "") -> JsonObj | None:
     """Best Connect material-database entry for an Orca filament: same type, then vendor, name words and colour."""
     want_type = _norm(material_type)
     want_vendor = _norm(vendor)
     want_words = set(_norm(name).split()) - set(want_vendor.split()) - {want_type}
     want_color = (color or "").lstrip("#").upper()[:6]
 
-    def score(node: dict) -> tuple:
-        m = node.get("material") or {}
-        brand = _norm((m.get("brand") or {}).get("name") or "")
+    def score(node: JsonObj) -> tuple[bool, bool, int, bool, int]:
+        m = obj(node, "material")
+        brand = _norm(obj(m, "brand").get("name") or "")
         words = set(_norm(m.get("name") or "").split())
         return (
             _norm(m.get("abbreviation") or "") == want_type,
             bool(brand) and (brand == want_vendor or brand in want_words),
             len(want_words & (words | {brand})),
-            bool(want_color) and ((m.get("primaryColor") or {}).get("colorRgba") or "").lstrip("#").upper()[:6] == want_color,
+            bool(want_color) and (obj(m, "primaryColor").get("colorRgba") or "").lstrip("#").upper()[:6] == want_color,
             -len(words - want_words),
         )
 
-    candidates = [n for n in nodes if _norm((n.get("material") or {}).get("abbreviation") or "") == want_type]
+    candidates = [n for n in nodes if _norm(obj(n, "material").get("abbreviation") or "") == want_type]
     return max(candidates, key=score) if candidates else None
 
 

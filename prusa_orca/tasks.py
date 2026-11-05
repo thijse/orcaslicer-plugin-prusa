@@ -58,7 +58,7 @@ class Task:
     finished: float = 0.0
     result: Any = None
     on_done: Callable[[Task], None] | None = field(default=None, repr=False)
-    _done: threading.Event = field(default_factory=threading.Event, repr=False)
+    done_event: threading.Event = field(default_factory=threading.Event, repr=False)
 
     @property
     def elapsed(self) -> float:
@@ -128,7 +128,7 @@ class TaskRunner:
         return task
 
     def wait(self, task: Task, timeout: float | None = None) -> Task:
-        task._done.wait(timeout)
+        task.done_event.wait(timeout)
         return task
 
     def _finish(self, task: Task, state: str, result: Any = None, error: str = "") -> None:
@@ -141,7 +141,7 @@ class TaskRunner:
             self._running.pop(task.id, None)
             self.recent.insert(0, task)
             del self.recent[20:]
-        task._done.set()
+        task.done_event.set()
         self._notify(task)
         if task.on_done is not None:
             try:

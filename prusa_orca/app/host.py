@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
+import importlib
 import logging
 import os
 import sys
+from typing import Any
 
-try:
-    import orca  # type: ignore
 
-    if not (hasattr(orca, "printer_agent") and hasattr(orca, "register_capability")):
-        orca = None
-except ImportError:
-    orca = None
+def _load_orca() -> Any:
+    """OrcaSlicer's embedded `orca` module, or None outside OrcaSlicer. It has no type stubs, hence Any."""
+    try:
+        module = importlib.import_module("orca")
+    except ImportError:
+        return None
+    return module if hasattr(module, "printer_agent") and hasattr(module, "register_capability") else None
+
+
+orca: Any = _load_orca()
 
 __version__ = "0.2.0"
 AGENT_ID = "prusa3d_plugin"

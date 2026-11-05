@@ -11,6 +11,7 @@ import logging
 import secrets
 import threading
 from collections.abc import Callable
+from typing import Any
 
 LOG = logging.getLogger("prusa_orca.snapshot")
 
@@ -54,7 +55,7 @@ class SnapshotServer:
                 self.end_headers()
                 self.wfile.write(image)
 
-            def log_message(self, *args) -> None:
+            def log_message(self, format: str, *args: Any) -> None:
                 pass
 
         self._httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)

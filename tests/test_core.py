@@ -70,6 +70,7 @@ class TestMerge(unittest.TestCase):
             bed_temperature=99.0,
         )
         merged = merge(lan, cloud)
+        assert merged is not None
         self.assertEqual(len(merged.tools), 5)
         self.assertAlmostEqual(merged.bed_temperature, 20.6)
         self.assertEqual(merged.source, "lan+connect")
@@ -135,13 +136,18 @@ class TestMaterials(unittest.TestCase):
     def tool(self, **kw):
         return ToolState(index=0, tool_number=1, is_loaded=True, **kw)
 
+    def match(self, tool):
+        preset = match_preset(tool, self.PRESETS)
+        assert preset is not None
+        return preset
+
     def test_named_spool_matches_exact_preset(self):
         t = self.tool(material="PLA", vendor="Prusament", name="PLA Army Green")
-        self.assertEqual(match_preset(t, self.PRESETS).filament_id, "PFL07")
+        self.assertEqual(self.match(t).filament_id, "PFL07")
 
     def test_type_only_prefers_generic(self):
-        self.assertEqual(match_preset(self.tool(material="PLA"), self.PRESETS).filament_id, "GFL99")
-        self.assertEqual(match_preset(self.tool(material="PETG"), self.PRESETS).filament_id, "GFG99")
+        self.assertEqual(self.match(self.tool(material="PLA")).filament_id, "GFL99")
+        self.assertEqual(self.match(self.tool(material="PETG")).filament_id, "GFG99")
 
     def test_unknown_type_and_fallback_id(self):
         t = self.tool(material="ASA")
@@ -199,11 +205,12 @@ class TestPickConnectMaterial(unittest.TestCase):
     )
 
     def test_prefers_type_vendor_and_fewest_extra_words(self):
-        pick = pick_connect_material(self.NODES, "Prusament", "Prusament PLA Army Green", "PLA", "#524F2F")
+        pick = pick_connect_material(list(self.NODES), "Prusament", "Prusament PLA Army Green", "PLA", "#524F2F")
+        assert pick is not None
         self.assertEqual(pick["uuid"], "b")
 
     def test_wrong_type_never_matches(self):
-        self.assertIsNone(pick_connect_material(self.NODES[3:], "Prusament", "Army Green", "PLA"))
+        self.assertIsNone(pick_connect_material(list(self.NODES[3:]), "Prusament", "Army Green", "PLA"))
 
 
 class TestFilamentIdResolver(unittest.TestCase):
@@ -374,19 +381,25 @@ class TestPagesHtml(unittest.TestCase):
 class TestAggregateTools(unittest.TestCase):
     def test_keeps_last_tools_when_connect_omits_them(self):
         from prusa_orca.backends.aggregate import AggregateBackend
+        from prusa_orca.backends.connect import ConnectBackend, TokenStore
 
         answers = [
             PrinterTelemetry(connected=True, tools=[ToolState(index=0, tool_number=1, material="PLA")]),
             PrinterTelemetry(connected=True, tools=[]),
         ]
 
-        class FakeCloud:
+        class FakeCloud(ConnectBackend):
+            def __init__(self):
+                super().__init__(TokenStore(os.devnull), "")
+
             def fetch_telemetry(self):
                 return answers.pop(0)
 
         backend = AggregateBackend(None, FakeCloud(), tools_interval=0)
         backend.fetch_status()
-        self.assertEqual([t.material for t in backend.fetch_status().tools], ["PLA"])
+        snapshot = backend.fetch_status()
+        assert snapshot is not None
+        self.assertEqual([t.material for t in snapshot.tools], ["PLA"])
 
 
 class TestJobDetail(unittest.TestCase):
@@ -401,7 +414,9 @@ class TestJobDetail(unittest.TestCase):
             connected=True, raw_state=RawPrinterState.PRINTING, job=JobState(job_id=447, total_height=36.05, layer_height=0.15)
         )
         before = PrinterTelemetry(connected=True, job=JobState(job_id=462, layer_num=32))
-        p = build_push_status(merge(lan, cloud, before), 1)["print"]
+        merged = merge(lan, cloud, before)
+        assert merged is not None
+        p = build_push_status(merged, 1)["print"]
         self.assertEqual((p["layer_num"], p["total_layer_num"]), (33, 240))
         self.assertEqual((p["gcode_file"], p["subtask_name"]), ("ORCA_P~1.GCO", "cube.gcode"))
 

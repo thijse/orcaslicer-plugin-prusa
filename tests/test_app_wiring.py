@@ -19,17 +19,19 @@ def _stub_orca() -> types.ModuleType:
             self.posted.append(message)
 
     orca = types.ModuleType("orca")
-    orca.printer_agent = types.SimpleNamespace(
-        PrinterAgentBase=Base,
-        AgentInfo=lambda *a: a,
-        FilamentSyncMode=types.SimpleNamespace(Subscription=1),
-        CameraStreamMode=types.SimpleNamespace(RTSP=1, HTTP_SNAPSHOT=2, None_=0),
+    vars(orca).update(
+        printer_agent=types.SimpleNamespace(
+            PrinterAgentBase=Base,
+            AgentInfo=lambda *a: a,
+            FilamentSyncMode=types.SimpleNamespace(Subscription=1),
+            CameraStreamMode=types.SimpleNamespace(RTSP=1, HTTP_SNAPSHOT=2, None_=0),
+        ),
+        pages=types.SimpleNamespace(PagesPluginCapabilityBase=Base),
+        register_capability=lambda cls: None,
+        request_permissions=lambda **kw: None,
+        plugin=lambda cls: cls,
+        base=object,
     )
-    orca.pages = types.SimpleNamespace(PagesPluginCapabilityBase=Base)
-    orca.register_capability = lambda cls: None
-    orca.request_permissions = lambda **kw: None
-    orca.plugin = lambda cls: cls
-    orca.base = object
     return orca
 
 

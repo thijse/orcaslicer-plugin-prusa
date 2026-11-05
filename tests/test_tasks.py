@@ -1,3 +1,4 @@
+import email.message
 import os
 import sys
 import threading
@@ -9,6 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from prusa_orca import tasks
 from prusa_orca.backends.aggregate import AggregateBackend
+from prusa_orca.backends.connect import ConnectBackend, TokenStore
+from prusa_orca.backends.prusalink import PrusaLinkBackend
 from prusa_orca.model import PrinterTelemetry
 from prusa_orca.tasks import TaskBusy, TaskRunner, reason
 
@@ -32,7 +35,7 @@ class TestTaskRunner(unittest.TestCase):
 
     def test_failure_gets_a_readable_reason(self):
         def fail():
-            raise urllib.error.HTTPError("u", 503, "x", {}, None)
+            raise urllib.error.HTTPError("u", 503, "x", email.message.Message(), None)
 
         self.runner.submit("Set bed", fail, on_done=self.on_done)
         self.assertTrue(self.finished.wait(2))
@@ -67,14 +70,16 @@ class TestTaskRunner(unittest.TestCase):
 
     def test_reasons(self):
         self.assertEqual(
-            reason(urllib.error.HTTPError("u", 401, "x", {}, None)), "Prusa Connect refused the request; log in again"
+            reason(urllib.error.HTTPError("u", 401, "x", email.message.Message(), None)),
+            "Prusa Connect refused the request; log in again",
         )
         self.assertEqual(reason(TimeoutError()), "no answer in time")
         self.assertTrue(reason(urllib.error.URLError("getaddrinfo failed")).startswith("can't reach the server"))
 
 
-class SlowCloud:
+class SlowCloud(ConnectBackend):
     def __init__(self, delay):
+        super().__init__(TokenStore(os.devnull), "")
         self.delay = delay
         self.calls = 0
 
@@ -84,7 +89,10 @@ class SlowCloud:
         return PrinterTelemetry(connected=True)
 
 
-class FastLan:
+class FastLan(PrusaLinkBackend):
+    def __init__(self):
+        super().__init__("127.0.0.1", "")
+
     def fetch_status(self):
         return PrinterTelemetry(connected=True)
 
@@ -94,12 +102,14 @@ class FastLan:
 
 class TestSlowConnectDoesNotBlockLan(unittest.TestCase):
     def test_lan_poll_returns_while_connect_is_slow(self):
-        backend = AggregateBackend(FastLan(), SlowCloud(1.0), tools_interval=0)
+        cloud = SlowCloud(1.0)
+        backend = AggregateBackend(FastLan(), cloud, tools_interval=0)
         start = time.monotonic()
         backend.fetch_status()
         backend.fetch_status()  # Connect still busy: no second request
         self.assertLess(time.monotonic() - start, 0.5)
-        self.assertEqual(backend.cloud.calls, 1)
+        self.assertIs(backend.cloud, cloud)
+        self.assertEqual(cloud.calls, 1)
 
 
 if __name__ == "__main__":

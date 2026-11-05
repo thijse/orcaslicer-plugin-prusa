@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass, field
+from typing import Any
 
 # The config block and the time/filament summary sit at the end of the file.
 _TAIL_BYTES = 512 * 1024
@@ -41,7 +42,7 @@ def _split(value: str) -> list[str]:
 
 
 def _floats(value: str) -> list[float]:
-    out = []
+    out: list[float] = []
     for v in _split(value):
         try:
             out.append(float(v))
@@ -93,7 +94,7 @@ def parse_text(text: str) -> GcodeMeta:
     return meta
 
 
-def from_summary(data: dict) -> GcodeMeta:
+def from_summary(data: dict[str, Any] | None) -> GcodeMeta:
     """The metadata a history record kept (see `summary`)."""
     names = {f for f in GcodeMeta.__dataclass_fields__}
     return GcodeMeta(**{k: v for k, v in (data or {}).items() if k in names})
@@ -116,7 +117,7 @@ def read(path: str) -> GcodeMeta:
     return meta
 
 
-def summary(meta: GcodeMeta | None) -> dict:
+def summary(meta: GcodeMeta | None) -> dict[str, Any]:
     if meta is None:
         return {}
     return {

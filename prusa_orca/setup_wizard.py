@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from .jsonview import obj
 from .printers import model_for
 
 
@@ -21,8 +22,7 @@ class Proposal:
 def _rtsp_camera(cameras: list[dict[str, Any]]) -> str | None:
     """IP of a camera that can stream RTSP (the Buddy3D), from Connect's camera list."""
     for cam in cameras:
-        config = cam.get("config") or {}
-        net = config.get("network_info") or {}
+        net = obj(cam, "config", "network_info")
         ip = net.get("wifi_ipv4") or net.get("lan_ipv4") or ""
         if ip and "RtspStream" in (cam.get("features") or []):
             return ip
@@ -42,7 +42,8 @@ def propose(detail: dict[str, Any], cameras: list[dict[str, Any]]) -> Proposal:
         label += f" ({model.name})"
     p.found.append(f"Printer: {label}")
 
-    ip = (detail.get("network_info") or {}).get("lan_ipv4") or (detail.get("network_info") or {}).get("wifi_ipv4") or ""
+    net = obj(detail, "network_info")
+    ip = net.get("lan_ipv4") or net.get("wifi_ipv4") or ""
     if ip:
         p.patch["prusalink"]["host"] = ip
         p.found.append(f"PrusaLink address: {ip}")

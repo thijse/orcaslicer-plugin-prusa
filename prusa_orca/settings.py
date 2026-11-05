@@ -8,6 +8,8 @@ import os
 import threading
 from typing import Any
 
+from .jsonview import obj
+
 SETTINGS_FILE = "prusa_local.json"
 TOKENS_FILE = "connect_tokens.json"
 
@@ -46,7 +48,7 @@ def _deep_merge(base: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]:
     out = copy.deepcopy(base)
     for key, value in extra.items():
         if isinstance(value, dict) and isinstance(out.get(key), dict):
-            out[key] = _deep_merge(out[key], value)
+            out[key] = _deep_merge(out[key], obj(extra, key))
         else:
             out[key] = value
     return out
@@ -64,7 +66,7 @@ class Settings:
     def load(self) -> None:
         try:
             with open(self.path, encoding="utf-8-sig") as f:
-                stored = json.load(f)
+                stored = obj(json.load(f))
         except (OSError, ValueError):
             stored = {}
         with self._lock:
@@ -104,10 +106,10 @@ class Settings:
 
     def fill_from_connect(self, detail: dict[str, Any]) -> list[str]:
         """Fill empty LAN fields from the Connect printer record; returns the names filled."""
-        filled = []
+        filled: list[str] = []
         link = self.values["prusalink"]
         connect = self.values["connect"]
-        ip = (detail.get("network_info") or {}).get("lan_ipv4", "")
+        ip = obj(detail, "network_info").get("lan_ipv4", "")
         if ip and not link.get("host"):
             link["host"] = ip
             filled.append("PrusaLink host")

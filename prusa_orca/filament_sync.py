@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, cast
 
 from .materials import FilamentPreset, match_preset
 from .model import ToolState
@@ -13,7 +13,9 @@ def parse_colours(value: Any) -> list[str]:
     """`filament_colour` as Orca hands it over: a list, or a ';'/','-separated string with quotes."""
     if value is None:
         return []
-    items = value if isinstance(value, (list, tuple)) else str(value).replace(";", ",").split(",")
+    items: Iterable[object] = (
+        cast(Iterable[object], value) if isinstance(value, (list, tuple)) else str(value).replace(";", ",").split(",")
+    )
     return [str(v).strip().strip('"').upper() for v in items if str(v).strip()]
 
 
@@ -25,7 +27,7 @@ def compare(
     tools: list[ToolState], presets: Iterable[FilamentPreset], slot_presets: list[str], slot_colours: list[str]
 ) -> list[dict[str, Any]]:
     presets = list(presets)
-    rows = []
+    rows: list[dict[str, Any]] = []
     for tool in tools:
         i = tool.index
         match: FilamentPreset | None = match_preset(tool, presets)

@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from prusa_orca import consistency, gcode_meta, preflight, printers
 from prusa_orca.backends.aggregate import AggregateBackend
+from prusa_orca.backends.prusalink import PrusaLinkBackend
 from prusa_orca.model import PrinterTelemetry, RawPrinterState, ToolState
 
 
@@ -29,7 +30,10 @@ class TestSerial(unittest.TestCase):
         self.assertEqual(consistency.serial_mismatch("", "10381-2"), "")  # unknown: no claim
 
     def test_aggregate_drops_the_other_printers_data(self):
-        class Lan:
+        class Lan(PrusaLinkBackend):
+            def __init__(self):
+                super().__init__("127.0.0.1", "")
+
             def fetch_status(self):
                 return PrinterTelemetry(connected=True, raw_state=RawPrinterState.IDLE, source="lan")
 
@@ -39,11 +43,15 @@ class TestSerial(unittest.TestCase):
         backend = AggregateBackend(Lan(), None)
         backend._cloud_snapshot = PrinterTelemetry(serial_number="10381-CLOUD", tools=printer().tools)
         snapshot = backend.fetch_status()
+        assert snapshot is not None
         self.assertTrue(backend.identity_error)
         self.assertEqual(snapshot.tools, [])
         self.assertEqual(snapshot.serial_number, "10381-LAN")
+        assert backend._cloud_snapshot is not None
         backend._cloud_snapshot.serial_number = "10381-LAN"
-        self.assertEqual(len(backend.fetch_status().tools), 1)
+        again = backend.fetch_status()
+        assert again is not None
+        self.assertEqual(len(again.tools), 1)
 
 
 class TestPresetNotice(unittest.TestCase):

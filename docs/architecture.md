@@ -1,6 +1,6 @@
 # Architecture
 
-The plugin is split into four layers. A layer only imports from the layers below it.
+The plugin is split into four layers. A layer only imports from the layers below it. `lint-imports` (contracts in `pyproject.toml`) and `tests/test_layers.py` enforce this, and both run in CI.
 
 ```mermaid
 flowchart TD
@@ -23,7 +23,9 @@ flowchart TD
 | Core (`prusa_orca/*.py`) | Pure Python: no `orca`, no network, no threads except `tasks.py`. All decisions live here: what a phase means, which preset matches, what a preflight warns about. | Unit tests with fixtures. |
 | Backends (`prusa_orca/backends`) | Talk HTTP to the printer and Prusa Connect, turn answers into core `model` types. No Orca. | Tests with recorded fixtures and a fake HTTP server. |
 | UI (`prusa_orca/ui`) | The page HTML/JS and its images. Static; data comes in as JSON messages. | `test_core.TestPagesHtml`. |
-| App (`prusa_orca/app`) | The only code that imports `orca`: Orca presets and dialogs, the printer agent and the tab. Keep it thin; move logic that can be tested without Orca into the core. | `test_app_wiring` with a stub `orca`, plus a live check in Orca. |
+| App (`prusa_orca/app`) | The only code that uses `orca`, loaded once in `app/host.py`: Orca presets and dialogs, the printer agent and the tab. Keep it thin; move logic that can be tested without Orca into the core. | `test_app_wiring` with a stub `orca`, plus a live check in Orca. |
+
+The core and backends are type-checked in basedpyright's strict mode, the rest in standard mode. JSON from printers, Connect and settings files is read through `jsonview.py`, which checks types and falls back to defaults instead of raising.
 
 ## The Prusa tab
 

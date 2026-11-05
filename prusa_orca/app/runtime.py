@@ -228,7 +228,7 @@ class Runtime:
         """
         backend = self.backend
         cloud = backend.cloud if backend else None
-        if cloud is None or not commands:
+        if backend is None or cloud is None or not commands:
             return False
         if backend.identity_error:
             if on_done:
@@ -264,7 +264,7 @@ class Runtime:
         """Record the closest Connect material on a tool (label only); returns what was assigned."""
         backend = self.backend
         cloud = backend.cloud if backend else None
-        if cloud is None:
+        if backend is None or cloud is None:
             raise RuntimeError("log in to Prusa Connect to change a tool's material")
         if backend.identity_error:
             raise RuntimeError(backend.identity_error)

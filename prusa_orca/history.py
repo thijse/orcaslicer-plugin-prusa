@@ -14,6 +14,7 @@ import time
 import uuid
 from typing import Any
 
+from .jsonview import objs
 from .model import PrinterTelemetry, RawPrinterState
 
 MAX_RECORDS = 200
@@ -38,7 +39,7 @@ class PrintHistory:
         try:
             with open(path, encoding="utf-8") as f:
                 data = json.load(f)
-            self.records = [r for r in data if isinstance(r, dict)] if isinstance(data, list) else []
+            self.records = objs(data)
         except (OSError, ValueError):
             pass
 
@@ -205,7 +206,7 @@ class PrintTracker:
                     self._flags.add("near_end")
                     events.append(("near_end", record))
                 if state == RawPrinterState.ERROR:
-                    events.append(("failed", self._finish_active("failed", "The printer reported an error.")))
+                    events.append(("failed", self._finish_active("failed", "The printer reported an error.") or record))
             elif job.job_id is None:
                 # The job is gone; the state tells how it ended (it may lag one poll behind).
                 state = t.raw_state
@@ -213,11 +214,11 @@ class PrintTracker:
                     state in (RawPrinterState.IDLE, RawPrinterState.READY) and record["progress"] >= 98
                 ):
                     record["progress"] = 100.0
-                    events.append(("finished", self._finish_active("finished")))
+                    events.append(("finished", self._finish_active("finished") or record))
                 elif state == RawPrinterState.STOPPED or state in (RawPrinterState.IDLE, RawPrinterState.READY):
-                    events.append(("stopped", self._finish_active("stopped")))
+                    events.append(("stopped", self._finish_active("stopped") or record))
                 elif state == RawPrinterState.ERROR:
-                    events.append(("failed", self._finish_active("failed", "The printer reported an error.")))
+                    events.append(("failed", self._finish_active("failed", "The printer reported an error.") or record))
         if events and record is not None and record in self.history.records:
             self.history.save()
         self._last = t

@@ -105,7 +105,7 @@ The plugin logs in to Prusa Connect with PrusaSlicer's sign-in: log in in the br
 Any help on making the plugin more robust and feature complete is very welcome. Also testing it with different prusa printers and firmwares.
 
 - **Code layout:** [docs/architecture.md](docs/architecture.md). The core logic is plain Python with tests; only `prusa_orca/app` talks to Orca.
-- **Run the tests:** `python -m pytest tests`.
+- **Checks:** install [uv](https://docs.astral.sh/uv/), then `uv sync` and `uv run python scripts/check.py`. This runs Ruff, basedpyright, the layer contracts and pytest, the same as CI does on every push. Conventions for contributors and coding agents are in [AGENTS.md](AGENTS.md).
 - **Dev scripts:** the scripts in `tools/` drive a running OrcaSlicer through its MCP server. Set `ORCASLICER_SRC` to your OrcaSlicer source folder.
 
 ## License

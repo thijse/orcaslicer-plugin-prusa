@@ -70,9 +70,9 @@ class AggregateBackend:
     def refresh_tools(self) -> None:
         self._cloud_fetched_at = 0.0
 
-    def _fetch_cloud(self) -> None:
+    def _fetch_cloud(self, backend: ConnectBackend) -> None:
         try:
-            cloud = self.cloud.fetch_telemetry()
+            cloud = backend.fetch_telemetry()
             # Connect now and then answers without the tool list; keep the last one rather than flash empty slots.
             if not cloud.tools and self._cloud_snapshot is not None:
                 cloud.tools = self._cloud_snapshot.tools
@@ -99,11 +99,11 @@ class AggregateBackend:
             if lan is None:
                 # Connect is the only source: wait for it (bounded by its request timeout).
                 self._cloud_busy = True
-                self._fetch_cloud()
+                self._fetch_cloud(self.cloud)
             else:
                 # A slow Connect must not hold up the LAN status; its answer joins a later poll.
                 self._cloud_busy = True
-                threading.Thread(target=self._fetch_cloud, name="prusa-connect-poll", daemon=True).start()
+                threading.Thread(target=self._fetch_cloud, args=(self.cloud,), name="prusa-connect-poll", daemon=True).start()
         # Tools and identity of another printer must not be shown or acted on as this one's.
         cloud = None if self.identity_error else self._cloud_snapshot
         snapshot = merge(lan, cloud, self.last_snapshot)

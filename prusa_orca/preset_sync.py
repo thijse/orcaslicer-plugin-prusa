@@ -7,7 +7,8 @@ preset (Orca models it as a Bambu extruder variant), so it is shown but not sync
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Iterable
+from typing import Any, cast
 
 from .model import ToolState
 
@@ -19,7 +20,7 @@ def _list(value: Any) -> list[str]:
     if value is None:
         return []
     if isinstance(value, (list, tuple)):
-        return [str(v).strip().strip('"') for v in value]
+        return [str(v).strip().strip('"') for v in cast(Iterable[object], value)]
     return [v.strip().strip('"') for v in str(value).split(",") if v.strip()]
 
 
@@ -33,7 +34,7 @@ def _float(text: str) -> float | None:
 def compare(tools: list[ToolState], nozzle_diameter: Any, nozzle_type: Any) -> list[dict[str, Any]]:
     """One row per tool: what the printer has, what the preset has, and whether they differ."""
     diameters, types = _list(nozzle_diameter), _list(nozzle_type)
-    rows = []
+    rows: list[dict[str, Any]] = []
     # MMU slots share one nozzle: compare the head once.
     for tool in [t for t in tools if t.kind == "head"] or tools[:1]:
         i = tool.index
@@ -67,7 +68,7 @@ def printer_to_preset(rows: list[dict[str, Any]], nozzle_diameter: Any, nozzle_t
             new_d[i] = f"{row['printer']['diameter']:g}"
         if row["hardened_differs"]:
             new_t[i] = "hardened_steel" if row["printer"]["hardened"] else "brass"
-    out = {}
+    out: dict[str, str] = {}
     if new_d != diameters:
         out["nozzle_diameter"] = ",".join(new_d)
     if new_t != types:

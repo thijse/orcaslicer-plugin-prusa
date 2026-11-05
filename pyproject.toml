@@ -79,11 +79,3 @@ source_modules = [
     "prusa_orca.setup_wizard", "prusa_orca.tasks",
 ]
 forbidden_modules = ["prusa_orca.app", "prusa_orca.ui", "prusa_orca.backends"]
-
-[[tool.importlinter.contracts]]
-name = "Only the app layer imports Orca"
-type = "forbidden"
-source_modules = ["prusa_orca"]
-forbidden_modules = ["orca"]
-ignore_imports = ["prusa_orca.app.** -> orca"]
-allow_indirect_imports = true

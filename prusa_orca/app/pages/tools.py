@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from typing import Any, ClassVar
 
 from ... import filament_sync
+from ...model import ToolState
 from ...preset_sync import compare, preset_to_printer, printer_to_preset
 from ..host import LOG, orca
 from ..orca_state import filament_slots, printer_preset_nozzles
@@ -23,24 +24,26 @@ class ToolsTab(TabHandler):
         "assign": "assign",
     }
 
-    def _has_tools(self) -> bool:
+    def _tools(self) -> list[ToolState]:
+        """The printer's tools; empty (and the user told) before the printer reported any."""
         snapshot = self.rt.snapshot
         if snapshot is None or not snapshot.tools:
             self.page.say("No tool data from the printer yet.")
-            return False
-        return True
+            return []
+        return snapshot.tools
 
     def sync_filaments(self, message: dict[str, Any]) -> None:
         # UI thread: read the slots here; preset writes and Connect calls go to a worker.
         direction = message.get("direction")
-        if direction not in ("to_orca", "to_printer") or not self._has_tools():
+        tools = self._tools() if direction in ("to_orca", "to_printer") else []
+        if not tools:
             return
         rt, say = self.rt, self.page.say
         slots, colours = filament_slots()
         selected = _selected(message)
         rows = [
             r
-            for r in filament_sync.compare(rt.snapshot.tools, rt.presets, slots, colours)
+            for r in filament_sync.compare(tools, rt.presets, slots, colours)
             if r["tool_number"] in selected and r["slot"] is not None
         ]
         if not rows:
@@ -93,12 +96,13 @@ class ToolsTab(TabHandler):
     def sync_nozzles(self, message: dict[str, Any]) -> None:
         # UI thread (page message); the preset write and Connect commands go to workers.
         direction = message.get("direction")
-        if direction not in ("to_preset", "to_printer") or not self._has_tools():
+        tools = self._tools() if direction in ("to_preset", "to_printer") else []
+        if not tools:
             return
         rt, say = self.rt, self.page.say
         name, diameters, types = printer_preset_nozzles()
         selected = _selected(message)
-        rows = [r for r in compare(rt.snapshot.tools, diameters, types) if r["tool_number"] in selected]
+        rows = [r for r in compare(tools, diameters, types) if r["tool_number"] in selected]
         if not rows:
             say("Select at least one tool.")
             return

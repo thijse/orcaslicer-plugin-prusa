@@ -7,6 +7,7 @@ import time
 from collections.abc import Mapping
 from typing import Any, ClassVar
 
+from ...jsonview import obj
 from ..host import LOG
 from ..views import CONTROL_COMMANDS, EXTRA_COMMANDS
 from .base import TabHandler
@@ -61,7 +62,12 @@ class StatusTab(TabHandler):
         name = str(message.get("name") or "")
         if name not in CONTROL_COMMANDS and name not in EXTRA_COMMANDS:
             return
-        kwargs = message.get("kwargs") if isinstance(message.get("kwargs"), dict) else {}
+        kwargs = obj(message, "kwargs")
         say = self.page.say
-        if not self.rt.run_commands([(name, kwargs)], lambda errors: say("; ".join(errors)) if errors else None):
+
+        def done(errors: list[str]) -> None:
+            if errors:
+                say("; ".join(errors))
+
+        if not self.rt.run_commands([(name, kwargs)], done):
             say("Log in to Prusa Connect to control the printer.")
