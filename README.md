@@ -102,11 +102,12 @@ The plugin logs in to Prusa Connect with PrusaSlicer's sign-in: log in in the br
 
 ## For developers
 
+Any help on making the plugin more robust and feature complete is very welcome. Also testing it with different prusa printers and firmwares.
+
 - **Code layout:** [docs/architecture.md](docs/architecture.md). The core logic is plain Python with tests; only `prusa_orca/app` talks to Orca.
-- **Plugin API gaps:** [docs/upstream-gaps.md](docs/upstream-gaps.md) lists the gaps found in Orca's plugin API while building this.
 - **Run the tests:** `python -m pytest tests`.
 - **Dev scripts:** the scripts in `tools/` drive a running OrcaSlicer through its MCP server. Set `ORCASLICER_SRC` to your OrcaSlicer source folder.
 
 ## License
 
-[AGPL-3.0](LICENSE), the same as OrcaSlicer. Not affiliated with or endorsed by Prusa Research; Prusa, PrusaLink and Prusa Connect are trademarks of Prusa Research.
+[AGPL-3.0](LICENSE), Not affiliated with or endorsed by Prusa Research; Prusa, PrusaLink and Prusa Connect are trademarks of Prusa Research.
