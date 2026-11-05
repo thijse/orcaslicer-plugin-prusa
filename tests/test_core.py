@@ -23,7 +23,7 @@ from prusa_orca.dialect import (
 from prusa_orca.materials import FilamentIdResolver, FilamentPreset, match_preset, pick_connect_material, tray_info_idx
 from prusa_orca.model import InterpretedPhase, JobState, PrinterTelemetry, RawPrinterState, ToolState
 from prusa_orca.phase import interpret_phase
-from prusa_orca.settings import Settings
+from prusa_orca.settings import Settings, orca_data_dir
 
 
 def fixture(name):
@@ -273,6 +273,13 @@ class TestSettings(unittest.TestCase):
             s.update({"prusalink": {"password": "secret"}})
             self.assertIs(s.public_view()["prusalink"]["password"], True)
             self.assertEqual(s.lan_secret, "secret")
+
+    def test_orca_data_dir_for_local_and_cloud_storage(self):
+        data = os.path.join("base", "OrcaSlicer")
+        local = os.path.join(data, "orca_plugins", "plugin_data", "prusa_plugin")
+        cloud = os.path.join(data, "orca_plugins", "plugin_data", "_subscribed", "user1", "uuid1")
+        self.assertEqual(orca_data_dir(local), data)
+        self.assertEqual(orca_data_dir(cloud), data)
 
 
 class TestControl(unittest.TestCase):

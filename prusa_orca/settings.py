@@ -44,6 +44,16 @@ def default_data_dir() -> str:
     )
 
 
+def orca_data_dir(storage: str) -> str:
+    """Orca's data dir: the parent of the orca_plugins folder that holds a plugin's storage folder."""
+    path = os.path.normpath(storage)
+    while True:
+        parent = os.path.dirname(path)
+        if os.path.basename(path) == "orca_plugins" or parent == path:
+            return parent
+        path = parent
+
+
 def _deep_merge(base: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]:
     out = copy.deepcopy(base)
     for key, value in extra.items():

@@ -8,7 +8,7 @@ from typing import Any
 
 from .. import filament_sync
 from ..materials import FilamentIdResolver, FilamentPreset
-from ..settings import Settings, default_data_dir
+from ..settings import Settings, default_data_dir, orca_data_dir
 from .host import orca
 
 
@@ -35,10 +35,8 @@ _RESOLVER: FilamentIdResolver | None = None
 def _id_resolver() -> FilamentIdResolver | None:
     global _RESOLVER
     if _RESOLVER is None:
-        # storage() is <data_dir>/orca_plugins/plugin_data/<key>; system profiles live in <data_dir>/system.
-        storage = orca.host.plugin.storage()
-        data_dir = os.path.dirname(os.path.dirname(os.path.dirname(storage)))
-        _RESOLVER = FilamentIdResolver(os.path.join(data_dir, "system"))
+        # storage() is under <data_dir>/orca_plugins/plugin_data/ (deeper for a cloud install); system profiles live in <data_dir>/system.
+        _RESOLVER = FilamentIdResolver(os.path.join(orca_data_dir(orca.host.plugin.storage()), "system"))
     return _RESOLVER
 
 
