@@ -39,6 +39,8 @@ class SettingsTab(TabHandler):
         code = code_from_redirect(str(message.get("code") or ""))
         if not code or not rt.pending_verifier:
             self.page.say("Press Log in first, then paste the redirect address.")
+            self.page.post_message({"type": "wizard", "step": "login_failed",
+                                    "text": "open the login page first, then paste the address it ends on"})
             return
         verifier, rt.pending_verifier = rt.pending_verifier, ""
 
@@ -47,8 +49,10 @@ class SettingsTab(TabHandler):
                 rt.tokens.exchange_code(code, verifier)
                 rt.rebuild_backend()
                 self.page.say("Logged in to Prusa Connect.")
+                self.page.post_message({"type": "wizard", "step": "logged_in"})
             except ConnectAuthError as exc:
                 self.page.say(f"Login failed: {exc}. Codes are single-use; press Log in again.")
+                self.page.post_message({"type": "wizard", "step": "login_failed", "text": str(exc)})
 
         self.page.in_background(work, "Logging in to Prusa Connect", resource="login")
 

@@ -56,13 +56,23 @@ It follows Orca's light and dark themes.
 
 ## Set up your printer
 
-1. On the printer, turn on **PrusaLink**. Note its IP address and password, or its API key.
-2. In Orca, open the **Prusa** tab, then **Settings**. Enter the PrusaLink host and password and press **Save settings**.
-3. Optional but recommended: **Log in** to Prusa Connect and pick your printer. Connect adds:
-   - the filament and nozzle details for each tool;
-   - temperature, fan and movement controls;
-   - camera snapshots.
+The **setup wizard** opens the first time you open the Prusa tab; later you find it under **Settings > Setup wizard**.
+
+1. **Log in to Prusa Connect** in your browser and paste the address the login ends on.
+2. **Pick your printer.** The plugin reads its network address, PrusaLink API key and camera from Prusa Connect, so there is nothing to type.
+3. **Save and test.** The wizard checks that the printer answers over your network.
 4. In Orca's printer preset, select **Prusa (Link + Connect)** as the printer agent. Then pick the printer in the Device tab.
+
+<details>
+<summary>No Prusa Connect account? Set up PrusaLink by hand</summary>
+
+In the wizard, choose **Set up PrusaLink by hand** and enter:
+
+- **IP address:** on the printer, open **Settings > Network**.
+- **Password:** on the printer, open **Settings > Network > PrusaLink**. Make sure PrusaLink is on; the username is always `maker`.
+
+Without Prusa Connect you get status, upload and print, pause, resume and stop, and the file list. The per-tool filament details, temperature and movement controls, and camera snapshots need Prusa Connect.
+</details>
 
 The plugin identifies the model and number of tools on its own. If Orca's selected printer preset is for a different printer, the Prusa tab says so.
 

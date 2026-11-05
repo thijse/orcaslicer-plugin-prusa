@@ -143,6 +143,33 @@ PAGES_HTML = r"""<!DOCTYPE html>
   .banner { display: none; margin: 12px 12px 0; padding: 8px 12px; border: 1px solid; border-radius: 6px; }
   #identity-error { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); font-weight: 600; }
   #preset-notice { border-color: var(--warn); background: var(--warn-bg); color: inherit; }
+  #wiz { display: none; position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.6); align-items: center; justify-content: center; }
+  #wiz .wbox { min-height: 340px; display: flex; flex-direction: column; } #wiz .wnav { margin-top: auto; padding-top: 18px; }
+  #wiz.on { display: flex; }
+  #wiz .wbox { width: min(620px, 92vw); max-height: 88vh; overflow: auto; background: var(--orca-bg, #fff); color: var(--orca-fg, inherit);
+               border: 1px solid var(--bd); border-radius: 8px; padding: 18px 22px; box-shadow: 0 10px 28px rgba(0,0,0,.3); }
+  #wiz h3 { margin: 0 0 12px; }
+  .wsteps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0 0 14px; counter-reset: s; }
+  .wsteps li { flex: 1; font-size: 12px; color: var(--mu); border-top: 3px solid var(--bd); padding-top: 4px; counter-increment: s; }
+  .wsteps li::before { content: counter(s) ". "; }
+  .wsteps li.on { color: inherit; font-weight: 600; border-top-color: var(--acc); }
+  .wsteps li.done { border-top-color: var(--acc); }
+  .wpane { display: none; } .wpane.on { display: block; }
+  .how { padding-left: 20px; margin: 8px 0; line-height: 1.5; }
+  .alt { color: var(--mu); margin-top: 14px; } .alt a { color: var(--acc); }
+  .wlist { display: flex; flex-direction: column; gap: 6px; }
+  .wlist button:not(.tab):not(.icon) { text-align: left; height: auto; line-height: 1.4; padding: 10px 36px 10px 12px; position: relative;
+           background: transparent; border: 1px solid var(--bd); }
+  .wlist button:not(.tab):not(.icon):hover { border-color: var(--acc); background: var(--row-hover); }
+  .wlist button::after { content: "\203A"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 20px; color: var(--mu); }
+  .wlist button small { display: block; color: var(--mu); }
+  .wsteps li.on { color: inherit; font-weight: 700; }
+  .wnote { color: var(--mu); font-size: 12px; }
+  .wfound { padding-left: 20px; line-height: 1.6; }
+  .wfound li::marker { content: "✓  "; color: var(--ok); }
+  #w-missing p { background: var(--warn-bg); border: 1px solid var(--warn); border-radius: 6px; padding: 8px 12px; }
+  #w-result.ok { color: var(--ok); } #w-result.bad { color: var(--danger); }
+  .wnav { margin-top: 18px; }
   .waiting { opacity: .5; pointer-events: none; position: relative; }
   .waiting::after { content: ""; position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; border-radius: 50%;
                     border: 2px solid var(--acc); border-right-color: transparent; animation: spin .8s linear infinite; }
@@ -309,7 +336,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
   </section>
 
   <section class="page" id="p-settings" style="flex-direction: column">
-    <div class="box"><h4>Prusa Connect</h4><div class="pad">
+    <div class="box"><h4>Prusa Connect <span><button id="b-wizard" class="primary">Setup wizard</button></span></h4><div class="pad">
       <div class="kv"><span>Account</span><span id="login">-</span><span>Printer</span>
         <span><select id="printers" style="max-width: 360px"><option value="">-</option></select></span></div>
       <div class="btns"><button id="b-login" class="primary">Log in</button><button id="b-logout">Log out</button>
@@ -346,6 +373,38 @@ PAGES_HTML = r"""<!DOCTYPE html>
 </main>
 <div id="busy"><div class="track"><i></i></div><span class="label" id="busy-label"></span></div>
 <div id="toast"></div>
+<div id="wiz" role="dialog" aria-modal="true" aria-labelledby="wiz-title"><div class="wbox">
+  <h3 id="wiz-title">Set up your Prusa printer</h3>
+  <ol class="wsteps"><li data-s="login">Log in</li><li data-s="printer">Printer</li><li data-s="review">Settings</li><li data-s="test">Test</li></ol>
+  <div class="wpane" data-s="login">
+    <p>The easiest way: log in to Prusa Connect once, and the plugin reads your printer's network address and PrusaLink key from it.</p>
+    <ol class="how"><li>Press <b>Open login page</b> and log in to your Prusa account in the browser.</li>
+      <li>At the end the browser asks to open PrusaSlicer. Cancel that, then copy the address from the address bar
+        (it starts with <code>prusaslicer://login?code=</code>).</li>
+      <li>Paste it below and press <b>Continue</b>.</li></ol>
+    <div class="btns"><button id="w-open" class="primary">Open login page</button></div>
+    <label for="w-code">Login address</label><input type="text" id="w-code" placeholder="prusaslicer://login?code=...">
+    <p class="alt">No Prusa Connect account? <a href="#" id="w-manual">Set up PrusaLink by hand</a>.</p>
+  </div>
+  <div class="wpane" data-s="printer">
+    <p>Choose the printer to use with OrcaSlicer.</p>
+    <div id="w-printers" class="wlist"></div>
+  </div>
+  <div class="wpane" data-s="review">
+    <p id="w-found-h">Found in Prusa Connect:</p><ul id="w-found" class="wfound"></ul>
+    <div id="w-missing"></div><p id="w-notes" class="wnote"></p>
+    <div id="w-manual-fields">
+      <label for="w-host">Printer IP address</label><input type="text" id="w-host" placeholder="for example 192.168.1.50">
+      <label for="w-pw">PrusaLink password or API key</label><input type="password" id="w-pw">
+      <ol class="how"><li>On the printer, open <b>Settings &gt; Network</b> and note the <b>IP address</b>.</li>
+        <li>Open <b>Settings &gt; Network &gt; PrusaLink</b>. Make sure PrusaLink is on and note the <b>password</b>
+          shown there (the username is always <b>maker</b>).</li></ol>
+    </div>
+  </div>
+  <div class="wpane" data-s="test"><p id="w-result">Testing…</p></div>
+  <div class="btns wnav"><button id="w-cancel">Close</button><span style="flex:1"></span>
+    <button id="w-back">Back</button><button id="w-next" class="primary">Continue</button></div>
+</div></div>
 
 <script>
 (function () {
@@ -436,7 +495,10 @@ PAGES_HTML = r"""<!DOCTYPE html>
     text('login', d.logged_in ? 'logged in' : 'not logged in');
     show('b-login', !d.logged_in); show('b-logout', d.logged_in); show('login-code', !d.logged_in);
   }
+  var wizOffered = false;
   function renderSettings(s) {
+    // First run: nothing to talk to yet, so start with the wizard.
+    if (!wizOffered) { wizOffered = true; if (!s.prusalink.host && !s.connect.printer_uuid) wizOpen(); }
     if (document.activeElement !== $('s-host')) $('s-host').value = s.prusalink.host || '';
     if (document.activeElement !== $('s-uuid')) $('s-uuid').value = s.connect.printer_uuid || '';
     if (document.activeElement !== $('s-cam')) $('s-cam').value = s.camera.rtsp_url || '';
@@ -485,7 +547,8 @@ PAGES_HTML = r"""<!DOCTYPE html>
     if (!m) return;
     if (m.type === 'telemetry') render(m.data);
     if (m.type === 'settings') renderSettings(m.data);
-    if (m.type === 'message') { $('msg').textContent = m.text; toast(m.text); }
+    if (m.type === 'wizard') onWizard(m);
+    if (m.type === 'message') { $('msg').textContent = m.text; toast(m.text); if ($('wiz').classList.contains('on')) $('w-next').disabled = false; }
     if (m.type === 'history') renderHistory(m.data);
     if (m.type === 'tasks') { renderTasks(m.data); if (m.finished && m.finished.state === 'timeout') toast(m.finished.label + ': ' + m.finished.error + '. It may still happen; check the printer.'); }
     if (m.type === 'history_shot') { var im = document.querySelector('.shot[data-name="' + m.name + '"]'); if (im) im.src = m.data; }
@@ -524,6 +587,83 @@ PAGES_HTML = r"""<!DOCTYPE html>
   function banner(id, textValue) {
     var el = $(id); el.style.display = textValue ? 'block' : 'none'; el.textContent = textValue || '';
   }
+
+  // Setup wizard: log in to Connect, pick the printer, review what Connect knows, test PrusaLink.
+  var wiz = { step: 'login', manual: false, proposal: null, busy: false };
+  var WSTEPS = ['login', 'printer', 'review', 'test'];
+  function wizShow(step) {
+    wiz.step = step;
+    var i = WSTEPS.indexOf(step);
+    document.querySelectorAll('#wiz .wsteps li').forEach(function (li, n) { li.classList.toggle('on', n === i); li.classList.toggle('done', n < i); });
+    document.querySelectorAll('#wiz .wpane').forEach(function (p) { p.classList.toggle('on', p.dataset.s === step); });
+    show('w-manual-fields', step === 'review' && (wiz.manual || !(wiz.proposal && wiz.proposal.patch.prusalink.api_key && wiz.proposal.patch.prusalink.host)));
+    show('w-back', step !== 'login' && step !== 'test');
+    show('w-next', step !== 'printer');
+    $('w-next').textContent = step === 'review' ? 'Save and test' : step === 'test' ? 'Done' : 'Continue';
+    $('w-next').disabled = false;
+  }
+  function wizOpen() { wiz.manual = false; wiz.proposal = null; $('wiz').classList.add('on'); post({ command: 'wizard_state' }); wizShow('login'); }
+  function wizClose() { $('wiz').classList.remove('on'); }
+  function wizManual() {
+    wiz.manual = true; wiz.proposal = { patch: { prusalink: {}, connect: {}, camera: {}, printer: {} }, found: [], missing: [], notes: [] };
+    $('w-found').textContent = ''; $('w-missing').textContent = ''; $('w-notes').textContent = ''; $('w-host').value = '';
+    show('w-found-h', false); wizShow('review');
+  }
+  function onWizard(m) {
+    if (m.step === 'state') { if (m.logged_in && wiz.step === 'login') { wizShow('printer'); post({ command: 'wizard_printers' }); } }
+    else if (m.step === 'logged_in') { wizShow('printer'); post({ command: 'wizard_printers' }); }
+    else if (m.step === 'login_failed') { $('w-next').disabled = false; toast('Login failed: ' + m.text); }
+    else if (m.step === 'printers') {
+      var box = $('w-printers'); box.textContent = '';
+      if (!m.printers.length) { box.textContent = 'No printers in this Prusa account. Add the printer in Prusa Connect first, or set it up by hand.'; }
+      m.printers.forEach(function (p) {
+        var b = document.createElement('button'); b.textContent = p.name;
+        var s = document.createElement('small'); s.textContent = p.model; b.appendChild(s);
+        b.onclick = function () { post({ command: 'wizard_read', uuid: p.uuid }); };
+        box.appendChild(b);
+      });
+    } else if (m.step === 'proposal') {
+      wiz.proposal = m;
+      var ul = $('w-found'); ul.textContent = '';
+      m.found.forEach(function (f) { var li = document.createElement('li'); li.textContent = f; ul.appendChild(li); });
+      var miss = $('w-missing'); miss.textContent = '';
+      m.missing.forEach(function (f) { var p = document.createElement('p'); p.textContent = f; miss.appendChild(p); });
+      $('w-notes').textContent = (m.notes || []).join(' '); show('w-found-h', true);
+      $('w-host').value = m.patch.prusalink.host || '';
+      wizShow('review');
+    } else if (m.step === 'tested') {
+      var r = $('w-result'); r.textContent = m.text; r.className = m.ok ? 'ok' : 'bad';
+      if (!m.ok) { show('w-back', true); }
+    }
+  }
+  $('b-wizard').onclick = wizOpen;
+  $('w-cancel').onclick = wizClose;
+  $('w-manual').onclick = function (e) { e.preventDefault(); wizManual(); };
+  $('w-open').onclick = function () { post({ command: 'login_start' }); };
+  $('w-back').onclick = function () {
+    if (wiz.step === 'test') { wizShow('review'); return; }
+    wizShow(wiz.manual ? 'login' : WSTEPS[Math.max(0, WSTEPS.indexOf(wiz.step) - 1)]);
+    if (wiz.step === 'printer') post({ command: 'wizard_printers' });
+  };
+  $('w-next').onclick = function () {
+    if (wiz.step === 'login') {
+      if (!$('w-code').value.trim()) { toast('Paste the login address first.'); return; }
+      $('w-next').disabled = true;
+      post({ command: 'login_finish', code: $('w-code').value.trim() }); $('w-code').value = '';
+    } else if (wiz.step === 'review') {
+      var patch = JSON.parse(JSON.stringify(wiz.proposal.patch));
+      var host = $('w-host').value.trim();
+      if ($('w-manual-fields').style.display !== 'none') {
+        if (!host) { toast('Enter the printer\'s IP address.'); return; }
+        patch.prusalink.host = host;
+        if (!$('w-pw').value && !patch.prusalink.api_key) { toast('Enter the PrusaLink password.'); return; }
+      }
+      var pw = $('w-pw').value; $('w-pw').value = '';
+      $('w-result').textContent = 'Testing the connection to the printer\u2026'; $('w-result').className = '';
+      wizShow('test');
+      post({ command: 'wizard_apply', patch: patch, password: pw });
+    } else if (wiz.step === 'test') { wizClose(); }
+  };
   function applyAllowed(d) {
     allowed = d.allowed || {};
     document.querySelectorAll('.temps .set').forEach(function (el) { el.classList.toggle('off', !can(el.dataset.cmd)); });

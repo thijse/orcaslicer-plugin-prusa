@@ -140,6 +140,17 @@ class PrusaLinkBackend:
         code, body = self._get("/api/v1/info")
         return body if code == 200 else None
 
+    def check(self) -> tuple[bool, str]:
+        """Whether PrusaLink answers with these credentials, and why not."""
+        code, body = self._get("/api/v1/info")
+        if code == 200:
+            return True, str((body or {}).get("hostname") or self.host)
+        if code in (401, 403):
+            return False, "The printer answered, but did not accept the password or API key."
+        if code == 0:
+            return False, f"No answer from {self.host}. Check that the printer is on and PrusaLink is enabled."
+        return False, f"The printer answered HTTP {code}."
+
     def _send(self, method: str, path: str, headers: Optional[dict[str, str]] = None, data: Any = None,
               timeout: Optional[float] = None) -> int:
         req = urllib.request.Request(self.base_url + path, data=data, method=method, headers=headers or {})

@@ -262,6 +262,9 @@ class ConnectBackend:
         cams = (((data.get("data") or {}).get("camera") or {}).get("camerasConnection") or {}).get("edges") or []
         return next((((e.get("node") or {}).get("snapshots") or {}).get("lastSnapshotUrl") or "" for e in cams), "")
 
+    def list_cameras(self) -> list[dict[str, Any]]:
+        return self._request(f"{CONNECT_BASE}/app/printers/{self.printer_uuid}/cameras").get("cameras") or []
+
     def fetch_snapshot(self, url: str) -> bytes:
         req = urllib.request.Request(url, headers={"Authorization": f"Bearer {self.tokens.bearer()}", "User-Agent": USER_AGENT})
         with urllib.request.urlopen(req, timeout=self.timeout) as resp:
