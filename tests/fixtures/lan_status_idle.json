@@ -1,0 +1,21 @@
+{
+ "storage": {
+  "path": "/usb/",
+  "name": "usb",
+  "read_only": false
+ },
+ "printer": {
+  "state": "IDLE",
+  "temp_bed": 20.6,
+  "target_bed": 0.0,
+  "temp_nozzle": 0.0,
+  "target_nozzle": 0.0,
+  "axis_z": 0.0,
+  "axis_x": -8.0,
+  "axis_y": -9.0,
+  "flow": 0,
+  "speed": 100,
+  "fan_hotend": 0,
+  "fan_print": 0
+ }
+}

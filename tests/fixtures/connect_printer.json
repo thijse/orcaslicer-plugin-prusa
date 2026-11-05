@@ -1,0 +1,63 @@
+{
+ "state": "IDLE",
+ "temp": {
+  "temp_bed": 20.6,
+  "target_bed": 0.0
+ },
+ "tools": {
+  "1": {
+   "temp": 21.0,
+   "fan_hotend": 0.0,
+   "fan_print": 0.0,
+   "nozzle_diameter": 0.4,
+   "high_flow": false,
+   "hardened": false
+  },
+  "2": {
+   "temp": 19.0,
+   "fan_hotend": 0.0,
+   "fan_print": 0.0,
+   "nozzle_diameter": 0.4,
+   "high_flow": false,
+   "hardened": false
+  },
+  "3": {
+   "temp": 20.0,
+   "fan_hotend": 0.0,
+   "fan_print": 0.0,
+   "nozzle_diameter": 0.4,
+   "high_flow": false,
+   "hardened": false
+  },
+  "4": {
+   "temp": 21.0,
+   "fan_hotend": 0.0,
+   "fan_print": 0.0,
+   "nozzle_diameter": 0.4,
+   "high_flow": false,
+   "hardened": false
+  },
+  "5": {
+   "temp": 20.0,
+   "fan_hotend": 0.0,
+   "fan_print": 0.0,
+   "nozzle_diameter": 0.6,
+   "high_flow": false,
+   "hardened": true
+  }
+ },
+ "printer_type_name": "Original Prusa XL",
+ "firmware": "8.0.1+17071",
+ "speed": 100,
+ "axis_x": -8.0,
+ "axis_y": -9.0,
+ "axis_z": 0.0,
+ "network_info": {
+  "lan_ipv4": "192.0.2.10",
+  "hostname": "prusa-xl"
+ },
+ "organization_id": "11111111-1111-1111-1111-111111111111",
+ "prusalink_api_key": "LINKKEY",
+ "prusaconnect_api_key": "CONNECTKEY",
+ "sn": "SN-TEST"
+}

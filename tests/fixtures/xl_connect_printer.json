@@ -1,0 +1,89 @@
+{
+  "status": 200,
+  "body": {
+    "printer_type": "3.1.0",
+    "printer_model": "XL5IS",
+    "printer_type_name": "Original Prusa XL",
+    "fw_printer_type": "3.1.0",
+    "firmware": "8.0.1+17071",
+    "nozzle_diameter": 0.4,
+    "tools": {
+      "1": {
+        "temp": 21.0,
+        "fan_hotend": 0.0,
+        "fan_print": 0.0,
+        "nozzle_diameter": 0.4,
+        "high_flow": false,
+        "hardened": false
+      },
+      "2": {
+        "temp": 19.0,
+        "fan_hotend": 0.0,
+        "fan_print": 0.0,
+        "nozzle_diameter": 0.4,
+        "high_flow": false,
+        "hardened": false
+      },
+      "3": {
+        "temp": 20.0,
+        "fan_hotend": 0.0,
+        "fan_print": 0.0,
+        "nozzle_diameter": 0.4,
+        "high_flow": false,
+        "hardened": false
+      },
+      "4": {
+        "temp": 21.0,
+        "fan_hotend": 0.0,
+        "fan_print": 0.0,
+        "nozzle_diameter": 0.4,
+        "high_flow": false,
+        "hardened": false
+      },
+      "5": {
+        "temp": 20.0,
+        "fan_hotend": 0.0,
+        "fan_print": 0.0,
+        "nozzle_diameter": 0.6,
+        "high_flow": false,
+        "hardened": true
+      }
+    },
+    "enclosure": {
+      "present": false,
+      "enabled": false
+    },
+    "state": "IDLE",
+    "connect_state": "IDLE",
+    "printer_state": "IDLE",
+    "temp": {
+      "temp_bed": 20.6,
+      "target_bed": 0.0
+    },
+    "axis_x": -8.0,
+    "axis_y": -9.0,
+    "axis_z": 0.0,
+    "speed": 100,
+    "flow": 0,
+    "supported_printer_models": [
+      "XL",
+      "XL2",
+      "XL5",
+      "XLIS",
+      "XL2IS"
+    ],
+    "max_filename": 165,
+    "printable_extension": [
+      "bgcode",
+      "bgc",
+      "bg",
+      "gcode",
+      "gco",
+      "g"
+    ],
+    "uuid": "00000000-0000-4000-8000-000000000000",
+    "sn": "10000-0000000000000000",
+    "name": "Prusa XL",
+    "location": ""
+  }
+}

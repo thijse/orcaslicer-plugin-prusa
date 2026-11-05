@@ -1,0 +1,42 @@
+{
+  "printer": {
+    "name": "",
+    "model": "Original Prusa XL",
+    "tools_count": 5,
+    "uuid": ""
+  },
+  "prusalink": {
+    "enabled": true,
+    "host": "",
+    "port": 80,
+    "username": "maker",
+    "password": "",
+    "api_key": ""
+  },
+  "connect": {
+    "enabled": true,
+    "base_url": "https://connect.prusa3d.com",
+    "printer_token": "",
+    "team_id": null
+  },
+  "connect_local": {
+    "enabled": false,
+    "base_url": "",
+    "token": ""
+  },
+  "camera": {
+    "enabled": false,
+    "type": "buddy3d",
+    "rtsp_url": "",
+    "http_snapshot_url": ""
+  },
+  "backend_policy": {
+    "status": "lan_first",
+    "control": "lan_first",
+    "upload": "lan_first"
+  },
+  "poll": {
+    "printing_seconds": 3.0,
+    "idle_seconds": 15.0
+  }
+}
