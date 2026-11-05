@@ -369,6 +369,10 @@ PAGES_HTML = r"""<!DOCTYPE html>
       <span>Address</span><span id="ip">-</span><span>Data source</span><span id="src">-</span>
       <span>Last error</span><span id="err">-</span>
     </div></div>
+    <div class="box"><h4>Plugin</h4><div class="pad kv">
+      <span>Version</span><span id="ab-version">-</span><span>Installed as</span><span id="ab-kind">-</span>
+      <span>Location</span><span id="ab-location" style="word-break: break-all">-</span>
+    </div></div>
   </section>
 </main>
 <div id="busy"><div class="track"><i></i></div><span class="label" id="busy-label"></span></div>
@@ -547,6 +551,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
     if (!m) return;
     if (m.type === 'telemetry') render(m.data);
     if (m.type === 'settings') renderSettings(m.data);
+    if (m.type === 'about') { $('ab-version').textContent = m.data.version; $('ab-kind').textContent = m.data.kind; $('ab-location').textContent = m.data.location; }
     if (m.type === 'wizard') onWizard(m);
     if (m.type === 'message') { $('msg').textContent = m.text; toast(m.text); if ($('wiz').classList.contains('on')) $('w-next').disabled = false; }
     if (m.type === 'history') renderHistory(m.data);

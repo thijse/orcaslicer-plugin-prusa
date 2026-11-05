@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib
 import logging
 import os
@@ -25,6 +26,18 @@ AGENT_ID = "prusa3d_plugin"
 AGENT_NAME = "Prusa (Link + Connect)"
 PAGE_NAME = "Prusa"
 PLUGIN_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def install_info() -> dict[str, str]:
+    """Version and how this copy is installed: a .whl Orca extracted, or a plain folder (possibly a link to a checkout)."""
+    packaged = "__whl_extracted__" in PLUGIN_DIR.replace("\\", "/").split("/")
+    location = PLUGIN_DIR
+    with contextlib.suppress(OSError):
+        target = os.path.realpath(PLUGIN_DIR)
+        if os.path.normcase(target) != os.path.normcase(PLUGIN_DIR):
+            location = f"{PLUGIN_DIR} -> {target}"
+    return {"version": __version__, "kind": "package (.whl)" if packaged else "folder", "location": location}
+
 
 OK = 0
 ERR_NOT_SUPPORTED = -7010

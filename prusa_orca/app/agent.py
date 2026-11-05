@@ -27,6 +27,7 @@ from .host import (
     STAGE_FINISHED,
     STAGE_UPLOAD,
     __version__,
+    install_info,
     orca,
 )
 from .notices import warn
@@ -61,7 +62,8 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
 
     def on_load(self) -> None:
         runtime()
-        LOG.info("agent loaded (v%s)", __version__)
+        info = install_info()
+        LOG.info("agent loaded (v%s, %s at %s)", info["version"], info["kind"], info["location"])
 
     def on_unload(self) -> None:
         self.disconnect_printer()

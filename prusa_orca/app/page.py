@@ -12,7 +12,7 @@ from ..preset_sync import compare
 from ..printers import model_for
 from ..tasks import Task, TaskBusy
 from ..ui.page_html import PAGES_HTML
-from .host import LOG, PAGE_NAME, orca
+from .host import LOG, PAGE_NAME, install_info, orca
 from .orca_state import collect_filament_presets, filament_slots, printer_preset_model, printer_preset_nozzles
 from .pages import TABS
 from .runtime import runtime
@@ -94,6 +94,7 @@ class PrusaPage(orca.pages.PagesPluginCapabilityBase):
             LOG.exception("could not read filament presets")
         rt.start()
         self.post_message({"type": "settings", "data": rt.settings.public_view()})
+        self.post_message({"type": "about", "data": install_info()})
         self.push()
 
     def on_message(self, message: Any) -> None:
