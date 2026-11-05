@@ -119,8 +119,16 @@ def read(path: str) -> GcodeMeta:
 def summary(meta: GcodeMeta | None) -> dict:
     if meta is None:
         return {}
-    return {"filament_types": meta.filament_types, "filament_presets": meta.filament_presets,
-            "filament_colours": meta.filament_colours, "used_tools": meta.used_tools,
-            "filament_used_g": meta.filament_used_g, "estimated_seconds": meta.estimated_seconds,
-            "nozzle_diameters": meta.nozzle_diameters, "printer_model": meta.printer_model,
-            "printer_preset": meta.printer_preset, "high_flow": meta.high_flow, "required_hrc": meta.required_hrc}
+    return {
+        "filament_types": meta.filament_types,
+        "filament_presets": meta.filament_presets,
+        "filament_colours": meta.filament_colours,
+        "used_tools": meta.used_tools,
+        "filament_used_g": meta.filament_used_g,
+        "estimated_seconds": meta.estimated_seconds,
+        "nozzle_diameters": meta.nozzle_diameters,
+        "printer_model": meta.printer_model,
+        "printer_preset": meta.printer_preset,
+        "high_flow": meta.high_flow,
+        "required_hrc": meta.required_hrc,
+    }

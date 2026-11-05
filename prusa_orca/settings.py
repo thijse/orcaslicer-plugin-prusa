@@ -19,14 +19,27 @@ DEFAULTS: dict[str, Any] = {
     "camera": {"rtsp_url": ""},
     "poll": {"status_seconds": 3.0, "tools_seconds": 30.0},
     # Orca notifications per print event; see EVENT_TEXT in prusa_plugin.py.
-    "notify": {"started": True, "first_layer": True, "near_end": True, "paused": True, "attention": True,
-               "finished": True, "stopped": True, "failed": True},
+    "notify": {
+        "started": True,
+        "first_layer": True,
+        "near_end": True,
+        "paused": True,
+        "attention": True,
+        "finished": True,
+        "stopped": True,
+        "failed": True,
+    },
 }
 
 
 def default_data_dir() -> str:
-    return os.path.join(os.path.expandvars(r"%APPDATA%") if os.name == "nt" else os.path.expanduser("~/.config"),
-                        "OrcaSlicer", "orca_plugins", "plugin_data", "prusa_plugin")
+    return os.path.join(
+        os.path.expandvars(r"%APPDATA%") if os.name == "nt" else os.path.expanduser("~/.config"),
+        "OrcaSlicer",
+        "orca_plugins",
+        "plugin_data",
+        "prusa_plugin",
+    )
 
 
 def _deep_merge(base: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]:

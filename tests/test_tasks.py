@@ -33,14 +33,14 @@ class TestTaskRunner(unittest.TestCase):
     def test_failure_gets_a_readable_reason(self):
         def fail():
             raise urllib.error.HTTPError("u", 503, "x", {}, None)
+
         self.runner.submit("Set bed", fail, on_done=self.on_done)
         self.assertTrue(self.finished.wait(2))
         self.assertEqual(self.done[0][:2], ("failed", "Prusa Connect is having problems (HTTP 503)"))
 
     def test_timeout_releases_the_resource_and_ignores_the_late_answer(self):
         release = threading.Event()
-        self.runner.submit("Move", lambda: release.wait(5) and "late", resource="MOVE", timeout=0.6,
-                           on_done=self.on_done)
+        self.runner.submit("Move", lambda: release.wait(5) and "late", resource="MOVE", timeout=0.6, on_done=self.on_done)
         with self.assertRaises(TaskBusy):
             self.runner.submit("Move", lambda: None, resource="MOVE")
         self.assertTrue(self.finished.wait(3))
@@ -66,8 +66,9 @@ class TestTaskRunner(unittest.TestCase):
         self.assertIn(True, seen)
 
     def test_reasons(self):
-        self.assertEqual(reason(urllib.error.HTTPError("u", 401, "x", {}, None)),
-                         "Prusa Connect refused the request; log in again")
+        self.assertEqual(
+            reason(urllib.error.HTTPError("u", 401, "x", {}, None)), "Prusa Connect refused the request; log in again"
+        )
         self.assertEqual(reason(TimeoutError()), "no answer in time")
         self.assertTrue(reason(urllib.error.URLError("getaddrinfo failed")).startswith("can't reach the server"))
 

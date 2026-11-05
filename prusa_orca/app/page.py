@@ -66,6 +66,7 @@ class PrusaPage(orca.pages.PagesPluginCapabilityBase):
 
     def in_background(self, fn: Any, label: str = "", kind: str = "query", resource: str = "") -> None:
         """Run page work as a task; unlabelled work is background (no busy indicator)."""
+
         def done(task: Task) -> None:
             if task.state != "done":
                 self.say(f"{task.label}: {task.error}." if label else f"Error: {task.error}")
@@ -75,8 +76,13 @@ class PrusaPage(orca.pages.PagesPluginCapabilityBase):
     def _on_task(self, task: Task) -> None:
         # Any thread: the page shows the busy bar right away instead of at the next 3 s poll.
         if not task.quiet:
-            self.post_message({"type": "tasks", "data": [t.view() for t in runtime().tasks.running() if not t.quiet],
-                               "finished": task.view() if task.state != "running" else None})
+            self.post_message(
+                {
+                    "type": "tasks",
+                    "data": [t.view() for t in runtime().tasks.running() if not t.quiet],
+                    "finished": task.view() if task.state != "running" else None,
+                }
+            )
 
     def _init(self, message: dict[str, Any]) -> None:
         rt = runtime()

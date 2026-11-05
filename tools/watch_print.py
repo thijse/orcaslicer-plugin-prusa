@@ -35,11 +35,17 @@ def main() -> None:
         try:
             t = merge(lan.fetch_status(), cloud.fetch_telemetry())
             if t is not None:
-                row.update(state=t.raw_state.value, phase=t.interpreted_phase.value, z=t.axis_z,
-                           bed=[t.bed_temperature, t.bed_target_temperature],
-                           progress=t.job.progress_percent, left=t.job.time_remaining_seconds,
-                           layer=[t.job.layer_num, t.job.total_layer_num], active=t.active_tool,
-                           tools=[[x.temperature, x.target_temperature, x.is_active] for x in t.tools])
+                row.update(
+                    state=t.raw_state.value,
+                    phase=t.interpreted_phase.value,
+                    z=t.axis_z,
+                    bed=[t.bed_temperature, t.bed_target_temperature],
+                    progress=t.job.progress_percent,
+                    left=t.job.time_remaining_seconds,
+                    layer=[t.job.layer_num, t.job.total_layer_num],
+                    active=t.active_tool,
+                    tools=[[x.temperature, x.target_temperature, x.is_active] for x in t.tools],
+                )
                 seen_job = seen_job or t.job.job_id is not None
         except Exception as exc:
             row["error"] = str(exc)

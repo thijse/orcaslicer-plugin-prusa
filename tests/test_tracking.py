@@ -64,8 +64,15 @@ class TestPreflight(unittest.TestCase):
 
 
 def poll(state, job_id=None, progress=0.0, layer=0, left=0, name="cube.gcode"):
-    job = JobState(job_id=job_id, file_name=name if job_id else "", display_name=name if job_id else "",
-                   progress_percent=progress, layer_num=layer, total_layer_num=100, time_remaining_seconds=left)
+    job = JobState(
+        job_id=job_id,
+        file_name=name if job_id else "",
+        display_name=name if job_id else "",
+        progress_percent=progress,
+        layer_num=layer,
+        total_layer_num=100,
+        time_remaining_seconds=left,
+    )
     return PrinterTelemetry(connected=True, raw_state=state, job=job)
 
 

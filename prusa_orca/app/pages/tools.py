@@ -17,7 +17,11 @@ def _selected(message: dict[str, Any]) -> set[int]:
 
 
 class ToolsTab(TabHandler):
-    COMMANDS: ClassVar[Mapping[str, str]] = {"sync_nozzles": "sync_nozzles", "sync_filaments": "sync_filaments", "assign": "assign"}
+    COMMANDS: ClassVar[Mapping[str, str]] = {
+        "sync_nozzles": "sync_nozzles",
+        "sync_filaments": "sync_filaments",
+        "assign": "assign",
+    }
 
     def _has_tools(self) -> bool:
         snapshot = self.rt.snapshot
@@ -34,12 +38,16 @@ class ToolsTab(TabHandler):
         rt, say = self.rt, self.page.say
         slots, colours = filament_slots()
         selected = _selected(message)
-        rows = [r for r in filament_sync.compare(rt.snapshot.tools, rt.presets, slots, colours)
-                if r["tool_number"] in selected and r["slot"] is not None]
+        rows = [
+            r
+            for r in filament_sync.compare(rt.snapshot.tools, rt.presets, slots, colours)
+            if r["tool_number"] in selected and r["slot"] is not None
+        ]
         if not rows:
             say("Select at least one tool that has an Orca filament slot.")
             return
         if direction == "to_orca":
+
             def work() -> None:
                 done = []
                 for row in rows:
@@ -53,21 +61,33 @@ class ToolsTab(TabHandler):
                         done.append(f"T{row['tool_number']} preset")
                 # Orca only lets Script workers set slot colours (orca.host.tools), not a page's threads.
                 differ = [f"T{r['tool_number']}" for r in rows if r["color_differs"]]
-                note = (f" Slot colours ({', '.join(differ)}): press Sync in the Device tab's filament area; "
-                        "Orca doesn't let plugin pages set them yet.") if differ else ""
+                note = (
+                    (
+                        f" Slot colours ({', '.join(differ)}): press Sync in the Device tab's filament area; "
+                        "Orca doesn't let plugin pages set them yet."
+                    )
+                    if differ
+                    else ""
+                )
                 say(("Updated Orca: " + ", ".join(done) + "." if done else "Filament presets already match.") + note)
         else:
+
             def work() -> None:
                 done = []
                 for row in rows:
                     preset = next((p for p in rt.presets if p.name == row["slot"]["preset"]), None)
                     if preset is None or not row["printer"]["loaded"]:
                         continue
-                    assigned = rt.assign_tool_material(row["tool_number"] - 1, preset.vendor,
-                                                       preset.name.split("@", 1)[0].strip(), preset.type,
-                                                       row["slot"]["color"])
+                    assigned = rt.assign_tool_material(
+                        row["tool_number"] - 1,
+                        preset.vendor,
+                        preset.name.split("@", 1)[0].strip(),
+                        preset.type,
+                        row["slot"]["color"],
+                    )
                     done.append(f"T{row['tool_number']}: {assigned}")
                 say("Recorded in Prusa Connect: " + "; ".join(done) if done else "No loaded tool to update.")
+
         self.page.in_background(work, "Syncing filaments", kind="command", resource="sync-filaments")
 
     def sync_nozzles(self, message: dict[str, Any]) -> None:
@@ -102,6 +122,7 @@ class ToolsTab(TabHandler):
             if not commands:
                 say("The printer already matches the preset.")
                 return
+
             def done(errors: list[str]) -> None:
                 say("; ".join(errors) if errors else f"Sent {len(commands)} tool setting(s) to the printer.")
 

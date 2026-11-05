@@ -23,9 +23,15 @@ class StorageTab(TabHandler):
     def _list_files(self) -> None:
         lan = self.lan()
         if lan is not None:
-            self.page.post_message({"type": "files", "data": [
-                {"name": f.get("name"), "display_name": f.get("display_name"), "time": f.get("m_timestamp")}
-                for f in lan.list_files()]})
+            self.page.post_message(
+                {
+                    "type": "files",
+                    "data": [
+                        {"name": f.get("name"), "display_name": f.get("display_name"), "time": f.get("m_timestamp")}
+                        for f in lan.list_files()
+                    ],
+                }
+            )
 
     def thumbnail(self, message: dict[str, Any]) -> None:
         name = str(message.get("file") or "")
@@ -48,8 +54,13 @@ class StorageTab(TabHandler):
                     f.write(image)
         kind = "png" if image and image[:4] == b"\x89PNG" else "jpeg"
         # Answer even without an image: the page fetches thumbnails one at a time.
-        self.page.post_message({"type": "thumbnail", "file": name, "data":
-                                f"data:image/{kind};base64," + base64.b64encode(image).decode("ascii") if image else ""})
+        self.page.post_message(
+            {
+                "type": "thumbnail",
+                "file": name,
+                "data": f"data:image/{kind};base64," + base64.b64encode(image).decode("ascii") if image else "",
+            }
+        )
 
     def print_file(self, message: dict[str, Any]) -> None:
         name = str(message.get("name") or "")
@@ -61,8 +72,14 @@ class StorageTab(TabHandler):
             if self.rt.identity_error:
                 check.warnings.insert(0, self.rt.identity_error)
             if not check.ok:
-                self.page.post_message({"type": "confirm_print", "name": name, "blocked": bool(check.problems),
-                                        "text": preflight.message(check, name, "print")})
+                self.page.post_message(
+                    {
+                        "type": "confirm_print",
+                        "name": name,
+                        "blocked": bool(check.problems),
+                        "text": preflight.message(check, name, "print"),
+                    }
+                )
                 return
         self.page.in_background(lambda: self._print_file(name), "Starting print", kind="job", resource="job")
 
@@ -72,6 +89,11 @@ class StorageTab(TabHandler):
             return
         status = lan.print_file(name)
         LOG.info("print file %s: HTTP %s", name, status)
-        self.page.say("Print started." if status in (200, 201, 204) else
-                      "The printer is busy." if status == 409 else f"The printer answered HTTP {status}.")
+        self.page.say(
+            "Print started."
+            if status in (200, 201, 204)
+            else "The printer is busy."
+            if status == 409
+            else f"The printer answered HTTP {status}."
+        )
         self.rt.refresh_now()

@@ -25,8 +25,9 @@ def printer_image_html() -> str:
     if not art:
         return PRINTER_SVG
     first = art.get("xl") or next(iter(art.values()))
-    return (f'<img class="art" id="art" alt="" src="{first}">'
-            f'<script type="application/json" id="art-map">{json.dumps(art)}</script>')
+    return (
+        f'<img class="art" id="art" alt="" src="{first}"><script type="application/json" id="art-map">{json.dumps(art)}</script>'
+    )
 
 
 # A 5-toolhead tool changer: frame, gantry, docked heads and the active head on the carriage.

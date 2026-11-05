@@ -1,7 +1,8 @@
 """Dev helper: slice a cube in a running Orca and open the Send (upload only) dialog.
 
-  python tools/orca_send_test.py [--press]   --press also clicks Send (uploads a file; never prints)
+python tools/orca_send_test.py [--press]   --press also clicks Send (uploads a file; never prints)
 """
+
 import re
 import sys
 import time

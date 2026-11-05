@@ -87,8 +87,11 @@ class TokenStore:
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         tmp = self.path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"access_token": self.access_token, "refresh_token": self.refresh_token,
-                       "expires_at": self.expires_at}, f, indent=2)
+            json.dump(
+                {"access_token": self.access_token, "refresh_token": self.refresh_token, "expires_at": self.expires_at},
+                f,
+                indent=2,
+            )
         os.replace(tmp, self.path)
 
     @property
@@ -104,8 +107,12 @@ class TokenStore:
 
     def _token_request(self, fields: dict[str, str]) -> None:
         body = urllib.parse.urlencode({"client_id": CLIENT_ID, **fields}).encode()
-        req = urllib.request.Request(f"{ACCOUNT_BASE}/o/token/", data=body, method="POST",
-                                     headers={"Content-Type": "application/x-www-form-urlencoded", "User-Agent": USER_AGENT})
+        req = urllib.request.Request(
+            f"{ACCOUNT_BASE}/o/token/",
+            data=body,
+            method="POST",
+            headers={"Content-Type": "application/x-www-form-urlencoded", "User-Agent": USER_AGENT},
+        )
         try:
             with urllib.request.urlopen(req, timeout=15) as resp:
                 data = json.loads(resp.read())
@@ -118,8 +125,9 @@ class TokenStore:
 
     def exchange_code(self, code: str, verifier: str) -> None:
         with self._lock:
-            self._token_request({"grant_type": "authorization_code", "code": code,
-                                 "redirect_uri": REDIRECT_URI, "code_verifier": verifier})
+            self._token_request(
+                {"grant_type": "authorization_code", "code": code, "redirect_uri": REDIRECT_URI, "code_verifier": verifier}
+            )
 
     def bearer(self) -> str:
         with self._lock:
@@ -146,7 +154,7 @@ def parse_graphql_tools(data: dict[str, Any]) -> list[ToolState]:
     slots = [r for r in raws if "." in str(r.get("id", ""))] if fff.get("hasMmuEnabled") is not False else []
     heads = {str(r.get("id")): r for r in raws if "." not in str(r.get("id", ""))}
     tools: list[ToolState] = []
-    for raw in (slots or list(heads.values()) or raws):
+    for raw in slots or list(heads.values()) or raws:
         cid = str(raw.get("id", len(tools)))
         head = heads.get(cid.split(".")[0], raw) if slots else raw
         idx = int(cid.split(".")[-1]) if slots else int(cid)
@@ -219,8 +227,11 @@ class ConnectBackend:
     def supported_commands(self) -> dict[str, list[str]]:
         """Command name -> printer states it can run in, as the printer reports to Connect."""
         data = self._request(f"{CONNECT_BASE}/app/printers/{self.printer_uuid}/supported-commands")
-        self.command_args = {c["command"]: [a for a in c.get("args") or [] if a.get("input", True)]
-                             for c in data.get("commands") or [] if c.get("command")}
+        self.command_args = {
+            c["command"]: [a for a in c.get("args") or [] if a.get("input", True)]
+            for c in data.get("commands") or []
+            if c.get("command")
+        }
         return {c["command"]: list(c.get("executable_from_state") or []) for c in data.get("commands") or [] if c.get("command")}
 
     def command(self, name: str, **kwargs: Any) -> Any:
@@ -230,9 +241,15 @@ class ConnectBackend:
 
     def list_printers(self) -> list[dict[str, Any]]:
         data = self._request(f"{CONNECT_BASE}/app/printers?limit=100")
-        return [{"uuid": p.get("uuid", ""), "name": p.get("name") or p.get("uuid", ""),
-                 "model": p.get("printer_type_name") or p.get("printer_model") or ""}
-                for p in (data.get("printers") or []) if p.get("uuid")]
+        return [
+            {
+                "uuid": p.get("uuid", ""),
+                "name": p.get("name") or p.get("uuid", ""),
+                "model": p.get("printer_type_name") or p.get("printer_model") or "",
+            }
+            for p in (data.get("printers") or [])
+            if p.get("uuid")
+        ]
 
     def fetch_printer(self) -> dict[str, Any]:
         self.printer_detail = self._request(f"{CONNECT_BASE}/app/printers/{self.printer_uuid}")
@@ -242,20 +259,23 @@ class ConnectBackend:
     def _graphql(self, operation: str, query: str, variables: dict[str, Any]) -> dict[str, Any]:
         if not self.organization_id:
             self.fetch_printer()
-        payload = json.dumps({"operationName": operation, "query": query,
-                              "variables": {"organizationId": self.organization_id, **variables}}).encode()
+        payload = json.dumps(
+            {"operationName": operation, "query": query, "variables": {"organizationId": self.organization_id, **variables}}
+        ).encode()
         data = self._request(GRAPHQL_URL, payload)
         if data.get("errors"):
             raise RuntimeError("; ".join(str(e.get("message", e)) for e in data["errors"]))
         return data
 
     def fetch_tools(self) -> list[ToolState]:
-        return parse_graphql_tools(self._graphql("GetPrinterFffTelemetry", PRINTER_FFF_TELEMETRY,
-                                                 {"printerId": self.printer_uuid}))
+        return parse_graphql_tools(
+            self._graphql("GetPrinterFffTelemetry", PRINTER_FFF_TELEMETRY, {"printerId": self.printer_uuid})
+        )
 
     def snapshot_url(self) -> str:
-        payload = json.dumps({"operationName": "CamerasByPrinter", "query": CAMERAS_BY_PRINTER,
-                              "variables": {"printerUuid": self.printer_uuid}}).encode()
+        payload = json.dumps(
+            {"operationName": "CamerasByPrinter", "query": CAMERAS_BY_PRINTER, "variables": {"printerUuid": self.printer_uuid}}
+        ).encode()
         data = self._request(GRAPHQL_URL, payload)
         cams = (((data.get("data") or {}).get("camera") or {}).get("camerasConnection") or {}).get("edges") or []
         return next((((e.get("node") or {}).get("snapshots") or {}).get("lastSnapshotUrl") or "" for e in cams), "")
@@ -279,16 +299,21 @@ class ConnectBackend:
         """Record a material-database entry on a tool ("0".. or MMU slot "0.n"), as Connect's Tools > Assign does."""
         material = item.get("material") or {}
         if item.get("isCustom"):
-            ref = {"uuid": item["uuid"], "name": material.get("name"), "type": material.get("type"),
-                   "abbreviation": material.get("abbreviation")}
+            ref = {
+                "uuid": item["uuid"],
+                "name": material.get("name"),
+                "type": material.get("type"),
+                "abbreviation": material.get("abbreviation"),
+            }
             if (material.get("primaryColor") or {}).get("colorRgba"):
                 ref["primaryColor"] = {"colorRgba": material["primaryColor"]["colorRgba"]}
             ref = {k: v for k, v in ref.items() if v is not None}
         else:
             ref = {"uuid": item["uuid"]}
         printer = {"fffTools": [{"id": str(tool_id), "materialPackageInstance": {"package": {"material": ref}}}]}
-        data = self._graphql("UpdatePrinterMaterial", UPDATE_PRINTER_MATERIAL,
-                             {"printerId": self.printer_uuid, "printer": printer})
+        data = self._graphql(
+            "UpdatePrinterMaterial", UPDATE_PRINTER_MATERIAL, {"printerId": self.printer_uuid, "printer": printer}
+        )
         result = ((data.get("data") or {}).get("printer") or {}).get("updatePrinter") or {}
         if result.get("__typename") == "ConnectError":
             raise RuntimeError(result.get("message") or "Connect refused the assignment")
@@ -329,13 +354,16 @@ class ConnectBackend:
         )
         job = detail.get("job_info") or {}
         if job:
-            telemetry.job = JobState(job_id=job.get("id"), state=raw_state,
-                                     display_name=str(job.get("display_name") or ""),
-                                     progress_percent=float(job.get("progress") or 0.0),
-                                     time_remaining_seconds=int(job.get("time_remaining") or 0),
-                                     time_printing_seconds=int(job.get("time_printing") or 0),
-                                     total_height=float(job.get("total_height") or 0.0),
-                                     layer_height=self._layer_height(job.get("id")))
+            telemetry.job = JobState(
+                job_id=job.get("id"),
+                state=raw_state,
+                display_name=str(job.get("display_name") or ""),
+                progress_percent=float(job.get("progress") or 0.0),
+                time_remaining_seconds=int(job.get("time_remaining") or 0),
+                time_printing_seconds=int(job.get("time_printing") or 0),
+                total_height=float(job.get("total_height") or 0.0),
+                layer_height=self._layer_height(job.get("id")),
+            )
         telemetry.interpreted_phase = interpret_phase(telemetry)
         return telemetry
 

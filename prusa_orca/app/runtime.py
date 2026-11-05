@@ -93,8 +93,9 @@ class Runtime:
             from logging.handlers import RotatingFileHandler
 
             os.makedirs(data_dir, exist_ok=True)
-            handler = RotatingFileHandler(os.path.join(data_dir, "prusa_plugin.log"), maxBytes=1_000_000,
-                                          backupCount=2, encoding="utf-8")
+            handler = RotatingFileHandler(
+                os.path.join(data_dir, "prusa_plugin.log"), maxBytes=1_000_000, backupCount=2, encoding="utf-8"
+            )
             handler.setFormatter(logging.Formatter("%(asctime)s %(threadName)s %(levelname)s %(message)s"))
             LOG.addHandler(handler)
         except OSError:
@@ -203,19 +204,23 @@ class Runtime:
         if cloud is None:
             return {}
         if self._supported is None and not self.tasks.busy("supported-commands") and time.time() >= self._supported_retry:
+
             def fetch() -> None:
                 try:
                     self._supported = cloud.supported_commands()
                 except Exception:
                     self._supported_retry = time.time() + 60
                     raise
+
             with contextlib.suppress(TaskBusy):
-                self.tasks.submit("Reading the printer's commands", fetch, kind="query", resource="supported-commands",
-                                  quiet=True)
+                self.tasks.submit(
+                    "Reading the printer's commands", fetch, kind="query", resource="supported-commands", quiet=True
+                )
         return self._supported or {}
 
-    def run_commands(self, commands: list[tuple[str, dict[str, Any]]], on_done: Any | None = None,
-                     label: str = "", resource: str = "") -> bool:
+    def run_commands(
+        self, commands: list[tuple[str, dict[str, Any]]], on_done: Any | None = None, label: str = "", resource: str = ""
+    ) -> bool:
         """Send Connect commands in order as one task; False when Connect isn't set up.
 
         `resource` (default: the first command) blocks a second request for the same control until
@@ -241,8 +246,9 @@ class Runtime:
             if on_done:
                 on_done([] if task.state == "done" else [f"{task.label}: {task.error}"])
 
-        self.tasks.submit(label or command_label(commands[0][0]), work, kind="command",
-                          resource=resource or commands[0][0], on_done=done)
+        self.tasks.submit(
+            label or command_label(commands[0][0]), work, kind="command", resource=resource or commands[0][0], on_done=done
+        )
         return True
 
     def refresh_now(self) -> None:
@@ -291,8 +297,6 @@ def runtime() -> Runtime:
                 LOG.debug("plugin storage unavailable, using %s", data_dir)
         RUNTIME = Runtime(data_dir)
     return RUNTIME
-
-
 
 
 def current_runtime() -> Runtime | None:

@@ -36,10 +36,15 @@ def main() -> None:
     out = sys.argv[1]
     prompt = sys.argv[2] if len(sys.argv) > 2 else PROMPT
     verify = os.environ.get("SSL_VERIFY", "True").lower() not in ("false", "0", "no")
-    client = OpenAI(base_url=os.environ["PROXY_BASE_URL"].rstrip("/") + "/v1", api_key=os.environ["LITELLM_API_KEY"],
-                    http_client=httpx.Client(verify=verify, timeout=300), max_retries=2)
-    result = client.images.generate(model="gpt-image-2", prompt=prompt, size="1024x1024", background="transparent",
-                                    quality="high")
+    client = OpenAI(
+        base_url=os.environ["PROXY_BASE_URL"].rstrip("/") + "/v1",
+        api_key=os.environ["LITELLM_API_KEY"],
+        http_client=httpx.Client(verify=verify, timeout=300),
+        max_retries=2,
+    )
+    result = client.images.generate(
+        model="gpt-image-2", prompt=prompt, size="1024x1024", background="transparent", quality="high"
+    )
     with open(out, "wb") as f:
         f.write(base64.b64decode(result.data[0].b64_json))
     print("wrote", out)

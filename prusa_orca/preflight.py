@@ -35,8 +35,10 @@ def check(meta: GcodeMeta, telemetry: PrinterTelemetry | None, print_after: bool
     model = model_for(telemetry.printer_type)
     printer_name = model.name if model else telemetry.model or "this printer"
     if meta.printer_model and not is_prusa(meta.printer_model):
-        result.warnings.append(f"The plate was sliced for {meta.printer_model}, not a Prusa printer. "
-                               f"Its start G-code, speeds and limits may not suit the {printer_name}.")
+        result.warnings.append(
+            f"The plate was sliced for {meta.printer_model}, not a Prusa printer. "
+            f"Its start G-code, speeds and limits may not suit the {printer_name}."
+        )
     elif model and meta.printer_model and not same_model(meta.printer_model, model):
         result.warnings.append(f"The plate was sliced for {meta.printer_model}, but the printer is a {model.name}.")
     tools = {t.index: t for t in telemetry.tools}
@@ -53,21 +55,30 @@ def check(meta: GcodeMeta, telemetry: PrinterTelemetry | None, print_after: bool
         elif _norm(tool.material) != _norm(wanted):
             result.warnings.append(f"{label}: sliced for {wanted}, but {tool.material} is loaded.")
         # An MMU's slots share the one nozzle, so Orca lists a single diameter.
-        sliced = meta.nozzle_diameters[i if tool.kind == "head" else 0] if \
-            len(meta.nozzle_diameters) > (i if tool.kind == "head" else 0) else 0
+        sliced = (
+            meta.nozzle_diameters[i if tool.kind == "head" else 0]
+            if len(meta.nozzle_diameters) > (i if tool.kind == "head" else 0)
+            else 0
+        )
         nozzle_owner = tool.kind == "head" or i == min(meta.used_tools or [0])
         if sliced and abs(sliced - tool.nozzle_diameter) > 1e-6 and nozzle_owner:
-            result.warnings.append(f"{label}: sliced for a {sliced:g} mm nozzle, "
-                                   f"but the printer has {tool.nozzle_diameter:g} mm.")
+            result.warnings.append(
+                f"{label}: sliced for a {sliced:g} mm nozzle, but the printer has {tool.nozzle_diameter:g} mm."
+            )
         if nozzle_owner and meta.high_flow and not tool.high_flow:
-            result.warnings.append(f"{label}: sliced for a high-flow nozzle, but the printer reports a standard one; "
-                                   "it may not keep up with the flow.")
+            result.warnings.append(
+                f"{label}: sliced for a high-flow nozzle, but the printer reports a standard one; "
+                "it may not keep up with the flow."
+            )
         elif nozzle_owner and tool.high_flow and not meta.high_flow and model and model.hf_presets:
-            result.warnings.append(f"{label}: the printer has a high-flow nozzle, but the plate was sliced with "
-                                   "a standard nozzle preset.")
+            result.warnings.append(
+                f"{label}: the printer has a high-flow nozzle, but the plate was sliced with a standard nozzle preset."
+            )
         if meta.abrasive(i) and not tool.hardened:
-            result.warnings.append(f"{label}: {wanted} is abrasive and wears a non-hardened nozzle; "
-                                   "the printer reports no hardened nozzle on this tool.")
+            result.warnings.append(
+                f"{label}: {wanted} is abrasive and wears a non-hardened nozzle; "
+                "the printer reports no hardened nozzle on this tool."
+            )
     return result
 
 

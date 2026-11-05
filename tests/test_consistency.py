@@ -10,8 +10,12 @@ from prusa_orca.model import PrinterTelemetry, RawPrinterState, ToolState
 
 
 def printer(ptype="3.1.0", **tool):
-    return PrinterTelemetry(connected=True, raw_state=RawPrinterState.IDLE, printer_type=ptype,
-                            tools=[ToolState(index=0, tool_number=1, material="PLA", **tool)])
+    return PrinterTelemetry(
+        connected=True,
+        raw_state=RawPrinterState.IDLE,
+        printer_type=ptype,
+        tools=[ToolState(index=0, tool_number=1, material="PLA", **tool)],
+    )
 
 
 def warnings(text, telemetry):

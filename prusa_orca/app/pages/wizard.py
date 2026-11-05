@@ -12,16 +12,24 @@ from .base import TabHandler
 
 
 class SetupWizard(TabHandler):
-    COMMANDS: ClassVar[Mapping[str, str]] = {"wizard_state": "state", "wizard_printers": "printers", "wizard_read": "read",
-                "wizard_apply": "apply", "wizard_test": "test"}
+    COMMANDS: ClassVar[Mapping[str, str]] = {
+        "wizard_state": "state",
+        "wizard_printers": "printers",
+        "wizard_read": "read",
+        "wizard_apply": "apply",
+        "wizard_test": "test",
+    }
 
     def _post(self, step: str, **data: Any) -> None:
         self.page.post_message({"type": "wizard", "step": step, **data})
 
     def state(self, message: dict[str, Any]) -> None:
         values = self.rt.settings.values
-        self._post("state", logged_in=self.rt.tokens.logged_in,
-                   configured=bool(values["prusalink"].get("host") and self.rt.settings.lan_secret))
+        self._post(
+            "state",
+            logged_in=self.rt.tokens.logged_in,
+            configured=bool(values["prusalink"].get("host") and self.rt.settings.lan_secret),
+        )
 
     def printers(self, message: dict[str, Any]) -> None:
         def work() -> None:
@@ -43,8 +51,9 @@ class SetupWizard(TabHandler):
             except Exception:
                 cameras = []
             proposal = propose(detail, cameras)
-            self._post("proposal", uuid=uuid, patch=proposal.patch, found=proposal.found, missing=proposal.missing,
-                       notes=proposal.notes)
+            self._post(
+                "proposal", uuid=uuid, patch=proposal.patch, found=proposal.found, missing=proposal.missing, notes=proposal.notes
+            )
 
         self.page.in_background(work, "Reading the printer from Prusa Connect", resource="fill")
 

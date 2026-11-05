@@ -65,10 +65,17 @@ class Task:
         return (self.finished or time.monotonic()) - self.started
 
     def view(self) -> dict[str, Any]:
-        return {"id": self.id, "label": self.label, "kind": self.kind, "resource": self.resource, "state": self.state,
-                "quiet": self.quiet,
-                "elapsed": round(self.elapsed, 1), "slow": self.state == "running" and self.elapsed >= SLOW_AFTER,
-                "error": self.error}
+        return {
+            "id": self.id,
+            "label": self.label,
+            "kind": self.kind,
+            "resource": self.resource,
+            "state": self.state,
+            "quiet": self.quiet,
+            "elapsed": round(self.elapsed, 1),
+            "slow": self.state == "running" and self.elapsed >= SLOW_AFTER,
+            "error": self.error,
+        }
 
 
 class TaskRunner:
@@ -88,17 +95,23 @@ class TaskRunner:
         with self._lock:
             return sorted(self._running.values(), key=lambda t: t.id)
 
-    def submit(self, label: str, fn: Callable[[], Any], kind: str = "query", resource: str = "",
-               on_done: Callable[[Task], None] | None = None, timeout: float | None = None,
-               quiet: bool = False) -> Task:
+    def submit(
+        self,
+        label: str,
+        fn: Callable[[], Any],
+        kind: str = "query",
+        resource: str = "",
+        on_done: Callable[[Task], None] | None = None,
+        timeout: float | None = None,
+        quiet: bool = False,
+    ) -> Task:
         """Run fn on a worker thread. Raises TaskBusy when `resource` is already in use."""
         limit = TIMEOUTS.get(kind, 30.0) if timeout is None else timeout
         with self._lock:
             if resource and any(t.resource == resource for t in self._running.values()):
                 raise TaskBusy(f"{label}: still waiting for the previous request")
             now = time.monotonic()
-            task = Task(next(self._ids), label, kind, resource, now, now + limit if limit else 0.0, quiet=quiet,
-                        on_done=on_done)
+            task = Task(next(self._ids), label, kind, resource, now, now + limit if limit else 0.0, quiet=quiet, on_done=on_done)
             self._running[task.id] = task
         self._notify(task)
 

@@ -105,8 +105,7 @@ def match_preset(tool: ToolState, presets: Iterable[FilamentPreset]) -> Filament
     return max(candidates, key=score)
 
 
-def pick_connect_material(nodes: list[dict], vendor: str, name: str, material_type: str,
-                          color: str = "") -> dict | None:
+def pick_connect_material(nodes: list[dict], vendor: str, name: str, material_type: str, color: str = "") -> dict | None:
     """Best Connect material-database entry for an Orca filament: same type, then vendor, name words and colour."""
     want_type = _norm(material_type)
     want_vendor = _norm(vendor)

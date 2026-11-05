@@ -39,13 +39,15 @@ def compare(tools: list[ToolState], nozzle_diameter: Any, nozzle_type: Any) -> l
         i = tool.index
         preset_d = _float(diameters[i]) if i < len(diameters) else None
         preset_t = types[i] if i < len(types) else ""
-        rows.append({
-            "tool_number": tool.tool_number,
-            "printer": {"diameter": tool.nozzle_diameter, "hardened": tool.hardened, "high_flow": tool.high_flow},
-            "preset": {"diameter": preset_d, "type": preset_t, "hardened": preset_t in HARDENED_TYPES},
-            "diameter_differs": preset_d is not None and abs(preset_d - tool.nozzle_diameter) > 1e-6,
-            "hardened_differs": bool(preset_t) and (preset_t in HARDENED_TYPES) != tool.hardened,
-        })
+        rows.append(
+            {
+                "tool_number": tool.tool_number,
+                "printer": {"diameter": tool.nozzle_diameter, "hardened": tool.hardened, "high_flow": tool.high_flow},
+                "preset": {"diameter": preset_d, "type": preset_t, "hardened": preset_t in HARDENED_TYPES},
+                "diameter_differs": preset_d is not None and abs(preset_d - tool.nozzle_diameter) > 1e-6,
+                "hardened_differs": bool(preset_t) and (preset_t in HARDENED_TYPES) != tool.hardened,
+            }
+        )
     return rows
 
 

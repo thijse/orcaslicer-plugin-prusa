@@ -15,8 +15,9 @@ from .tasks import reason as _reason
 LOG = logging.getLogger("prusa_orca.aggregate")
 
 
-def merge(lan: PrinterTelemetry | None, cloud: PrinterTelemetry | None,
-          previous: PrinterTelemetry | None = None) -> PrinterTelemetry | None:
+def merge(
+    lan: PrinterTelemetry | None, cloud: PrinterTelemetry | None, previous: PrinterTelemetry | None = None
+) -> PrinterTelemetry | None:
     if lan is None:
         return cloud
     if cloud is None:
@@ -48,8 +49,7 @@ def merge(lan: PrinterTelemetry | None, cloud: PrinterTelemetry | None,
 
 
 class AggregateBackend:
-    def __init__(self, lan: PrusaLinkBackend | None, cloud: ConnectBackend | None,
-                 tools_interval: float = 30.0) -> None:
+    def __init__(self, lan: PrusaLinkBackend | None, cloud: ConnectBackend | None, tools_interval: float = 30.0) -> None:
         self.lan = lan
         self.cloud = cloud
         self.tools_interval = tools_interval

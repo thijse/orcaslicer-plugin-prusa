@@ -6,10 +6,18 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from prusa_orca.setup_wizard import propose
 
-DETAIL = {"uuid": "u-1", "name": "Prusa XL", "printer_type": "3.1.0", "prusalink_api_key": "KEY",
-          "network_info": {"lan_ipv4": "192.168.1.50", "hostname": "prusa-xl"}}
-CAMERA = {"name": "Buddy3D Camera", "features": ["GetSnapshot", "RtspStream"],
-          "config": {"network_info": {"wifi_ipv4": "192.168.1.60"}}}
+DETAIL = {
+    "uuid": "u-1",
+    "name": "Prusa XL",
+    "printer_type": "3.1.0",
+    "prusalink_api_key": "KEY",
+    "network_info": {"lan_ipv4": "192.168.1.50", "hostname": "prusa-xl"},
+}
+CAMERA = {
+    "name": "Buddy3D Camera",
+    "features": ["GetSnapshot", "RtspStream"],
+    "config": {"network_info": {"wifi_ipv4": "192.168.1.60"}},
+}
 
 
 class TestPropose(unittest.TestCase):

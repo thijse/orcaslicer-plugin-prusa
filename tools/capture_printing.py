@@ -26,8 +26,13 @@ def main() -> None:
     lan = PrusaLinkBackend(link["host"], settings.lan_secret, link.get("username", "maker"))
     stamp = time.strftime("%H%M%S")
     captured = {}
-    for name, path in {"status": "/api/v1/status", "job": "/api/v1/job", "info": "/api/v1/info",
-                       "legacy_job": "/api/job", "legacy_printer": "/api/printer"}.items():
+    for name, path in {
+        "status": "/api/v1/status",
+        "job": "/api/v1/job",
+        "info": "/api/v1/info",
+        "legacy_job": "/api/job",
+        "legacy_printer": "/api/printer",
+    }.items():
         code, body = lan._get(path)
         captured[f"lan_{name}"] = {"http": code, "body": body}
     uuid = settings.values.get("connect", {}).get("printer_uuid", "")
@@ -37,9 +42,11 @@ def main() -> None:
             captured["connect_printer"] = cloud.fetch_printer()
         except Exception as exc:
             captured["connect_printer"] = {"error": str(exc)}
-        for name, path in {"connect_jobs": f"/app/printers/{uuid}/jobs?limit=3",
-                           "connect_queue": f"/app/printers/{uuid}/queue",
-                           "connect_telemetry": f"/app/printers/{uuid}/telemetry?limit=5"}.items():
+        for name, path in {
+            "connect_jobs": f"/app/printers/{uuid}/jobs?limit=3",
+            "connect_queue": f"/app/printers/{uuid}/queue",
+            "connect_telemetry": f"/app/printers/{uuid}/telemetry?limit=5",
+        }.items():
             try:
                 captured[name] = cloud._request(CONNECT_BASE + path)
             except Exception as exc:

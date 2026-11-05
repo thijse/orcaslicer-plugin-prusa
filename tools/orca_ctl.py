@@ -1,8 +1,9 @@
 """Dev helper for driving OrcaSlicer over MCP.
 
-  python tools/orca_ctl.py answer-all <Yes|No>   press a button on every open dialog
-  python tools/orca_ctl.py click <ref>
+python tools/orca_ctl.py answer-all <Yes|No>   press a button on every open dialog
+python tools/orca_ctl.py click <ref>
 """
+
 import json
 import sys
 import time

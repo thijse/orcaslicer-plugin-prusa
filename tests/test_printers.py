@@ -15,13 +15,25 @@ FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures")
 
 
 def tool(tid, material="", color="#ff0000ff", active=False, temp=20):
-    raw = {"id": tid, "features": {"nozzleDiameter": 0.4, "nozzleHighFlow": False, "nozzleHardened": False},
-           "telemetry": {"active": active, "temp": temp, "targetTemp": 0},
-           "materialPackageInstance": {"__typename": "ToolMaterialPackageInstanceEmpty", "reason": "x"}}
+    raw = {
+        "id": tid,
+        "features": {"nozzleDiameter": 0.4, "nozzleHighFlow": False, "nozzleHardened": False},
+        "telemetry": {"active": active, "temp": temp, "targetTemp": 0},
+        "materialPackageInstance": {"__typename": "ToolMaterialPackageInstanceEmpty", "reason": "x"},
+    }
     if material:
-        raw["materialPackageInstance"] = {"__typename": "FFFToolMaterialPackageInstance", "package": {"material": {
-            "name": f"{material} Red", "abbreviation": material, "brand": {"name": "Prusament"},
-            "primaryColor": {"colorRgba": color}, "type": {"abbreviation": material}}}}
+        raw["materialPackageInstance"] = {
+            "__typename": "FFFToolMaterialPackageInstance",
+            "package": {
+                "material": {
+                    "name": f"{material} Red",
+                    "abbreviation": material,
+                    "brand": {"name": "Prusament"},
+                    "primaryColor": {"colorRgba": color},
+                    "type": {"abbreviation": material},
+                }
+            },
+        }
     return raw
 
 
@@ -88,17 +100,27 @@ class TestPerModel(unittest.TestCase):
 
     def test_preflight_model_mismatch(self):
         meta = gcode_meta.parse_text("; filament_type = PLA\n; printer_model = Prusa MK4S HF\n")
-        t = PrinterTelemetry(connected=True, raw_state=RawPrinterState.IDLE, printer_type="2.1.0",
-                             tools=parse_graphql_tools(graphql([tool("0", "PLA")])))
-        self.assertTrue(any("sliced for Prusa MK4S HF, but the printer is a Prusa MINI" in w
-                            for w in preflight.check(meta, t, True).warnings))
+        t = PrinterTelemetry(
+            connected=True,
+            raw_state=RawPrinterState.IDLE,
+            printer_type="2.1.0",
+            tools=parse_graphql_tools(graphql([tool("0", "PLA")])),
+        )
+        self.assertTrue(
+            any("sliced for Prusa MK4S HF, but the printer is a Prusa MINI" in w for w in preflight.check(meta, t, True).warnings)
+        )
         t.printer_type = "1.4.1"
         t.tools[0].high_flow = True
         self.assertTrue(preflight.check(meta, t, True).ok)
 
     def test_preflight_matches_variants(self):
-        for sliced, ptype in (("Prusa XL 5T", "3.1.0"), ("Prusa CORE One MMU3", "7.1.0"), ("Prusa MINIIS", "2.1.0"),
-                              ("Prusa MK4 MMU3", "1.4.0"), ("Prusa CORE One INDX 4T", "7.10.0")):
+        for sliced, ptype in (
+            ("Prusa XL 5T", "3.1.0"),
+            ("Prusa CORE One MMU3", "7.1.0"),
+            ("Prusa MINIIS", "2.1.0"),
+            ("Prusa MK4 MMU3", "1.4.0"),
+            ("Prusa CORE One INDX 4T", "7.10.0"),
+        ):
             meta = gcode_meta.parse_text(f"; printer_model = {sliced}\n")
             t = PrinterTelemetry(connected=True, raw_state=RawPrinterState.IDLE, printer_type=ptype)
             self.assertFalse(preflight.check(meta, t, True).warnings, sliced)

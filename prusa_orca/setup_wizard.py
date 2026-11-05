@@ -11,6 +11,7 @@ from .printers import model_for
 @dataclass
 class Proposal:
     """Settings to apply, and what the user still has to do by hand."""
+
     patch: dict[str, Any] = field(default_factory=dict)
     found: list[str] = field(default_factory=list)  # "PrusaLink address: 192.168.1.50"
     missing: list[str] = field(default_factory=list)  # instructions for values Connect doesn't have
@@ -54,15 +55,19 @@ def propose(detail: dict[str, Any], cameras: list[dict[str, Any]]) -> Proposal:
         p.patch["prusalink"].update({"api_key": key, "password": ""})
         p.found.append("PrusaLink API key")
     else:
-        p.missing.append("PrusaLink password: on the printer, open Settings > Network > PrusaLink. "
-                         "The user is 'maker'; the password is shown there.")
+        p.missing.append(
+            "PrusaLink password: on the printer, open Settings > Network > PrusaLink. "
+            "The user is 'maker'; the password is shown there."
+        )
 
     cam = _rtsp_camera(cameras)
     if cam:
         p.patch["camera"]["rtsp_url"] = f"rtsp://{cam}/live"
         p.found.append(f"Camera stream: rtsp://{cam}/live")
-        p.notes.append("For a live camera in the Device tab, turn on RTSP in the camera's settings in Prusa Connect; "
-                       "until then the plugin shows Connect snapshots.")
+        p.notes.append(
+            "For a live camera in the Device tab, turn on RTSP in the camera's settings in Prusa Connect; "
+            "until then the plugin shows Connect snapshots."
+        )
     elif cameras:
         p.found.append("Camera: snapshots through Prusa Connect")
     return p

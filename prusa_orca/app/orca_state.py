@@ -61,9 +61,15 @@ def collect_filament_presets() -> list[FilamentPreset]:
         if preset is None or preset.is_default or not preset.is_visible:
             continue
         filament_id = _first(preset, "filament_id") or (resolver.resolve(preset.file) if resolver and preset.file else "")
-        out.append(FilamentPreset(name=preset.name, filament_id=filament_id,
-                                  vendor=_first(preset, "filament_vendor"), type=_first(preset, "filament_type"),
-                                  compatible=bool(preset.is_compatible)))
+        out.append(
+            FilamentPreset(
+                name=preset.name,
+                filament_id=filament_id,
+                vendor=_first(preset, "filament_vendor"),
+                type=_first(preset, "filament_type"),
+                compatible=bool(preset.is_compatible),
+            )
+        )
     return out
 
 
@@ -77,9 +83,11 @@ def _project_path() -> str:
 def _preset_names() -> dict[str, Any]:
     try:
         bundle = orca.host.preset_bundle()
-        return {"printer": bundle.current_printer_preset().name,
-                "process": str(bundle.full_config_value("print_settings_id") or ""),
-                "filaments": list(bundle.current_filament_preset_names())}
+        return {
+            "printer": bundle.current_printer_preset().name,
+            "process": str(bundle.full_config_value("print_settings_id") or ""),
+            "filaments": list(bundle.current_filament_preset_names()),
+        }
     except Exception:
         return {}
 
@@ -100,5 +108,3 @@ def filament_slots() -> tuple[list[str], list[str]]:
     """UI thread only: preset name and colour of each Orca filament slot."""
     bundle = orca.host.preset_bundle()
     return list(bundle.current_filament_preset_names()), filament_sync.parse_colours(bundle.full_config_value("filament_colour"))
-
-

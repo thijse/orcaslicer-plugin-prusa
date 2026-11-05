@@ -120,8 +120,9 @@ def limits(telemetry: PrinterTelemetry) -> tuple[int, int]:
     return (model.nozzle_max, model.bed_max) if model else (290, 120)
 
 
-def build_push_status(telemetry: PrinterTelemetry, sequence_id: int,
-                      filament_id_for: Callable[[ToolState], str] | None = None) -> dict[str, Any]:
+def build_push_status(
+    telemetry: PrinterTelemetry, sequence_id: int, filament_id_for: Callable[[ToolState], str] | None = None
+) -> dict[str, Any]:
     """Build complete push_status payload expected by OrcaSlicer DeviceManager."""
     state_str = map_gcode_state(telemetry.raw_state)
     stage = "2" if telemetry.is_printing else "1"
@@ -200,8 +201,10 @@ def tool_mapping_problem(ams_mapping: str) -> str:
         except (TypeError, ValueError):
             continue
         if 0 <= slot < 254 and slot != index:
-            return (f"Filament {index + 1} is mapped to tool {slot + 1}. The XL prints a file with the tools it was "
-                    f"sliced for, so put each filament on its own tool number and slice again.")
+            return (
+                f"Filament {index + 1} is mapped to tool {slot + 1}. The XL prints a file with the tools it was "
+                f"sliced for, so put each filament on its own tool number and slice again."
+            )
     return ""
 
 
@@ -219,6 +222,7 @@ def map_ams_to_prusa_tool_mapping(ams_mapping: str, tools_count: int = 5) -> dic
         # ams_mapping format can be "0:0,1:1" or a JSON list
         if ams_mapping.startswith("["):
             import json
+
             parsed = json.loads(ams_mapping)
             for idx, slot in enumerate(parsed):
                 slicer_idx = idx + 1

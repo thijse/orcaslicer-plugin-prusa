@@ -26,7 +26,7 @@ def gcode_to_commands(gcode: str, nozzle_max: int = NOZZLE_MAX, bed_max: int = B
         if not line:
             continue
         word = line.split()[0]
-        args = {m.group(1): float(m.group(2)) for m in re.finditer(r"([A-Z])(-?\d+(?:\.\d+)?)", line[len(word):])}
+        args = {m.group(1): float(m.group(2)) for m in re.finditer(r"([A-Z])(-?\d+(?:\.\d+)?)", line[len(word) :])}
         if word in ("M104", "M109") and "S" in args:
             commands.append(("SET_NOZZLE_TEMPERATURE", {"nozzle_temperature": int(_clamp(args["S"], 0, nozzle_max))}))
         elif word in ("M140", "M190") and "S" in args:

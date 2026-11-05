@@ -1,10 +1,10 @@
 """Dev CLI for the Prusa plugin, using the settings and Connect login saved by the plugin in Orca.
 
-  python tools/prusa_cli.py status
-  python tools/prusa_cli.py files
-  python tools/prusa_cli.py upload <file.gcode> [--name NAME]   (never starts a print)
-  python tools/prusa_cli.py job pause|resume|stop
-  python tools/prusa_cli.py printers                             (Prusa Connect)
+python tools/prusa_cli.py status
+python tools/prusa_cli.py files
+python tools/prusa_cli.py upload <file.gcode> [--name NAME]   (never starts a print)
+python tools/prusa_cli.py job pause|resume|stop
+python tools/prusa_cli.py printers                             (Prusa Connect)
 """
 
 from __future__ import annotations

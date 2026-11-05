@@ -62,8 +62,13 @@ class TestPrusaLink(unittest.TestCase):
 class TestMerge(unittest.TestCase):
     def test_lan_values_and_cloud_tools(self):
         lan = parse_status(fixture("lan_status_idle.json"))
-        cloud = PrinterTelemetry(connected=True, model="Original Prusa XL", firmware_version="8.0.1",
-                                 tools=parse_graphql_tools(fixture("graphql_fff_telemetry.json")), bed_temperature=99.0)
+        cloud = PrinterTelemetry(
+            connected=True,
+            model="Original Prusa XL",
+            firmware_version="8.0.1",
+            tools=parse_graphql_tools(fixture("graphql_fff_telemetry.json")),
+            bed_temperature=99.0,
+        )
         merged = merge(lan, cloud)
         self.assertEqual(len(merged.tools), 5)
         self.assertAlmostEqual(merged.bed_temperature, 20.6)
@@ -88,17 +93,26 @@ class TestDialect(unittest.TestCase):
         self.assertEqual(len(ams["ams"][1]["tray"]), 1)
 
     def test_unknown_colour_is_grey_and_empty_tool_is_placeholder(self):
-        tools = [ToolState(index=0, tool_number=1, material="PLA", color="", is_loaded=True),
-                 ToolState(index=1, tool_number=2, material="", is_loaded=False)]
+        tools = [
+            ToolState(index=0, tool_number=1, material="PLA", color="", is_loaded=True),
+            ToolState(index=1, tool_number=2, material="", is_loaded=False),
+        ]
         trays = build_ams_units(tools)["ams"][0]["tray"]
         self.assertEqual(trays[0]["tray_color"], "9E9E9EFF")
         self.assertEqual(trays[1].get("tray_slot_placeholder"), "1")
 
     def test_push_status(self):
-        t = PrinterTelemetry(connected=True, raw_state=RawPrinterState.PRINTING, nozzle_temperature=215.0,
-                             tools=self.tools, job=JobState(progress_percent=42.0, time_remaining_seconds=1200))
+        t = PrinterTelemetry(
+            connected=True,
+            raw_state=RawPrinterState.PRINTING,
+            nozzle_temperature=215.0,
+            tools=self.tools,
+            job=JobState(progress_percent=42.0, time_remaining_seconds=1200),
+        )
         p = build_push_status(t, 7, lambda tool: "OGFL99")["print"]
-        self.assertEqual((p["command"], p["gcode_state"], p["mc_percent"], p["mc_remaining_time"]), ("push_status", "RUNNING", 42, 20))
+        self.assertEqual(
+            (p["command"], p["gcode_state"], p["mc_percent"], p["mc_remaining_time"]), ("push_status", "RUNNING", 42, 20)
+        )
         self.assertEqual(p["ams"]["ams"][0]["tray"][0]["tray_info_idx"], "OGFL99")
 
     def test_version(self):
@@ -138,6 +152,7 @@ class TestMaterials(unittest.TestCase):
 class TestPrintJob(unittest.TestCase):
     def test_extracts_the_requested_plate(self):
         import zipfile
+
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "job.gcode.3mf")
             with zipfile.ZipFile(path, "w") as z:
@@ -161,10 +176,24 @@ class TestPrintJob(unittest.TestCase):
 
 class TestPickConnectMaterial(unittest.TestCase):
     NODES = (
-        {"uuid": "a", "material": {"name": "PLA Lightweight Army Green", "abbreviation": "PLA", "brand": {"name": "Prusament"},
-                                    "primaryColor": {"colorRgba": "#524f2fff"}}},
-        {"uuid": "b", "material": {"name": "PLA Army Green", "abbreviation": "PLA", "brand": {"name": "Prusament"},
-                                    "primaryColor": {"colorRgba": "#524f2fff"}}},
+        {
+            "uuid": "a",
+            "material": {
+                "name": "PLA Lightweight Army Green",
+                "abbreviation": "PLA",
+                "brand": {"name": "Prusament"},
+                "primaryColor": {"colorRgba": "#524f2fff"},
+            },
+        },
+        {
+            "uuid": "b",
+            "material": {
+                "name": "PLA Army Green",
+                "abbreviation": "PLA",
+                "brand": {"name": "Prusament"},
+                "primaryColor": {"colorRgba": "#524f2fff"},
+            },
+        },
         {"uuid": "c", "material": {"name": "PLA Army Green", "abbreviation": "PLA", "brand": {"name": "FormFutura"}}},
         {"uuid": "d", "material": {"name": "PETG Army Green", "abbreviation": "PETG", "brand": {"name": "Prusament"}}},
     )
@@ -260,11 +289,13 @@ class TestControl(unittest.TestCase):
 class TestPresetSync(unittest.TestCase):
     def setUp(self):
         from prusa_orca.model import ToolState
+
         self.tools = [ToolState(index=i, tool_number=i + 1) for i in range(5)]
         self.tools[4].nozzle_diameter, self.tools[4].hardened = 0.6, True
 
     def test_matching_preset_needs_nothing(self):
         from prusa_orca.preset_sync import compare, preset_to_printer, printer_to_preset
+
         d, t = "0.4,0.4,0.4,0.4,0.6", "brass,brass,brass,brass,hardened_steel"
         rows = compare(self.tools, d, t)
         self.assertEqual(printer_to_preset(rows, d, t), {})
@@ -272,15 +303,27 @@ class TestPresetSync(unittest.TestCase):
 
     def test_both_directions(self):
         from prusa_orca.preset_sync import compare, preset_to_printer, printer_to_preset
+
         d, t = "0.4,0.4,0.4,0.4,0.4", ["stainless_steel"] * 4 + ["brass"]
         rows = compare(self.tools, d, t)
-        self.assertEqual(printer_to_preset(rows, d, t), {"nozzle_diameter": "0.4,0.4,0.4,0.4,0.6",
-                                                         "nozzle_type": "stainless_steel,stainless_steel,stainless_steel,stainless_steel,hardened_steel"})
-        self.assertEqual(preset_to_printer(rows), [("SET_TOOL_NOZZLE_DIAMETER", {"tool_number": 5, "nozzle_diameter": 0.4}),
-                                                   ("SET_TOOL_HARDENED", {"tool_number": 5, "hardened": False})])
+        self.assertEqual(
+            printer_to_preset(rows, d, t),
+            {
+                "nozzle_diameter": "0.4,0.4,0.4,0.4,0.6",
+                "nozzle_type": "stainless_steel,stainless_steel,stainless_steel,stainless_steel,hardened_steel",
+            },
+        )
+        self.assertEqual(
+            preset_to_printer(rows),
+            [
+                ("SET_TOOL_NOZZLE_DIAMETER", {"tool_number": 5, "nozzle_diameter": 0.4}),
+                ("SET_TOOL_HARDENED", {"tool_number": 5, "hardened": False}),
+            ],
+        )
 
     def test_unknown_nozzle_type_is_not_a_difference(self):
         from prusa_orca.preset_sync import compare
+
         rows = compare(self.tools, "0.4,0.4,0.4,0.4,0.6", "")
         self.assertFalse(any(r["hardened_differs"] for r in rows))
 
@@ -291,10 +334,14 @@ class TestFilamentSync(unittest.TestCase):
         from prusa_orca.materials import FilamentPreset
         from prusa_orca.model import ToolState
 
-        tools = [ToolState(index=0, tool_number=1, material="PLA", vendor="Prusament", name="PLA Army Green", color="#4b5320"),
-                 ToolState(index=1, tool_number=2, material="", is_loaded=False)]
-        presets = [FilamentPreset("Prusament PLA @XL 5T", vendor="Prusament", type="PLA"),
-                   FilamentPreset("Generic PLA @XL 5T", vendor="Generic", type="PLA")]
+        tools = [
+            ToolState(index=0, tool_number=1, material="PLA", vendor="Prusament", name="PLA Army Green", color="#4b5320"),
+            ToolState(index=1, tool_number=2, material="", is_loaded=False),
+        ]
+        presets = [
+            FilamentPreset("Prusament PLA @XL 5T", vendor="Prusament", type="PLA"),
+            FilamentPreset("Generic PLA @XL 5T", vendor="Generic", type="PLA"),
+        ]
         colours = parse_colours('"#FFFFFF";"#00AE42"')
         rows = compare(tools, presets, ["Generic PLA @XL 5T", "Generic PETG @XL 5T"], colours)
         self.assertEqual(rows[0]["match"], "Prusament PLA @XL 5T")
@@ -308,7 +355,10 @@ class TestFilamentSync(unittest.TestCase):
         from prusa_orca.model import ToolState
 
         tools = [ToolState(index=0, tool_number=1, material="PLA", color="")]
-        presets = [FilamentPreset("Generic PLA", type="PLA"), FilamentPreset("Polymaker PolyTerra PLA", vendor="Polymaker", type="PLA")]
+        presets = [
+            FilamentPreset("Generic PLA", type="PLA"),
+            FilamentPreset("Polymaker PolyTerra PLA", vendor="Polymaker", type="PLA"),
+        ]
         row = compare(tools, presets, ["Polymaker PolyTerra PLA"], ["#FFFFFF"])[0]
         self.assertFalse(row["preset_differs"] or row["color_differs"])
 
@@ -325,8 +375,10 @@ class TestAggregateTools(unittest.TestCase):
     def test_keeps_last_tools_when_connect_omits_them(self):
         from prusa_orca.backends.aggregate import AggregateBackend
 
-        answers = [PrinterTelemetry(connected=True, tools=[ToolState(index=0, tool_number=1, material="PLA")]),
-                   PrinterTelemetry(connected=True, tools=[])]
+        answers = [
+            PrinterTelemetry(connected=True, tools=[ToolState(index=0, tool_number=1, material="PLA")]),
+            PrinterTelemetry(connected=True, tools=[]),
+        ]
 
         class FakeCloud:
             def fetch_telemetry(self):
@@ -339,11 +391,15 @@ class TestAggregateTools(unittest.TestCase):
 
 class TestJobDetail(unittest.TestCase):
     def test_layers_from_heights_and_job_name_reach_push_status(self):
-        lan = PrinterTelemetry(connected=True, raw_state=RawPrinterState.PRINTING, axis_z=5.0,
-                               job=JobState(job_id=462, file_name="ORCA_P~1.GCO", display_name="cube.gcode",
-                                            progress_percent=6.0))
-        cloud = PrinterTelemetry(connected=True, raw_state=RawPrinterState.PRINTING,
-                                 job=JobState(job_id=447, total_height=36.05, layer_height=0.15))
+        lan = PrinterTelemetry(
+            connected=True,
+            raw_state=RawPrinterState.PRINTING,
+            axis_z=5.0,
+            job=JobState(job_id=462, file_name="ORCA_P~1.GCO", display_name="cube.gcode", progress_percent=6.0),
+        )
+        cloud = PrinterTelemetry(
+            connected=True, raw_state=RawPrinterState.PRINTING, job=JobState(job_id=447, total_height=36.05, layer_height=0.15)
+        )
         before = PrinterTelemetry(connected=True, job=JobState(job_id=462, layer_num=32))
         p = build_push_status(merge(lan, cloud, before), 1)["print"]
         self.assertEqual((p["layer_num"], p["total_layer_num"]), (33, 240))

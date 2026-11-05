@@ -66,14 +66,35 @@ class PrintHistory:
         self.save()
 
 
-def new_record(file_name: str, project: str, plate: int, project_path: str, presets: dict[str, Any],
-               meta: dict[str, Any], print_after: bool, preflight: list[str]) -> dict[str, Any]:
+def new_record(
+    file_name: str,
+    project: str,
+    plate: int,
+    project_path: str,
+    presets: dict[str, Any],
+    meta: dict[str, Any],
+    print_after: bool,
+    preflight: list[str],
+) -> dict[str, Any]:
     return {
-        "id": uuid.uuid4().hex[:12], "file": file_name, "project": project, "plate": plate,
-        "project_path": project_path, "presets": presets, "meta": meta, "preflight": preflight,
-        "sent": _now(), "started": None, "ended": None,
+        "id": uuid.uuid4().hex[:12],
+        "file": file_name,
+        "project": project,
+        "plate": plate,
+        "project_path": project_path,
+        "presets": presets,
+        "meta": meta,
+        "preflight": preflight,
+        "sent": _now(),
+        "started": None,
+        "ended": None,
         "result": "sending" if print_after else "uploaded",
-        "progress": 0.0, "layer": 0, "layers": 0, "z": None, "printing_seconds": 0, "error": "",
+        "progress": 0.0,
+        "layer": 0,
+        "layers": 0,
+        "z": None,
+        "printing_seconds": 0,
+        "error": "",
         "print_after": print_after,
     }
 
@@ -131,8 +152,9 @@ class PrintTracker:
                     stale.update(result="unknown", ended=stale.get("ended") or _now())
                     self.history.save()
         if job.job_id is not None and self._job_id != job.job_id:
-            resumed = next((r for r in self.history.records if r.get("job_id") == job.job_id
-                            and r["result"] in OPEN_RESULTS), None)
+            resumed = next(
+                (r for r in self.history.records if r.get("job_id") == job.job_id and r["result"] in OPEN_RESULTS), None
+            )
             if resumed is not None and resumed is not record:
                 # Orca restarted during this print: carry on with its record, no new "started".
                 self.active, self._job_id, self._flags = resumed, job.job_id, {"first_layer", "near_end"}
@@ -154,8 +176,13 @@ class PrintTracker:
 
         if record is not None and self._job_id is not None:
             if job.job_id == self._job_id:
-                record.update(progress=round(job.progress_percent, 1), layer=job.layer_num, layers=job.total_layer_num,
-                              z=t.axis_z, printing_seconds=job.time_printing_seconds)
+                record.update(
+                    progress=round(job.progress_percent, 1),
+                    layer=job.layer_num,
+                    layers=job.total_layer_num,
+                    z=t.axis_z,
+                    printing_seconds=job.time_printing_seconds,
+                )
                 state = t.raw_state
                 if state == RawPrinterState.PAUSED and record["result"] != "paused":
                     record["result"] = "paused"
@@ -170,8 +197,11 @@ class PrintTracker:
                 if job.layer_num >= FIRST_LAYER and "first_layer" not in self._flags:
                     self._flags.add("first_layer")
                     events.append(("first_layer", record))
-                if 0 < job.time_remaining_seconds <= NEAR_END_SECONDS and job.progress_percent >= 50 \
-                        and "near_end" not in self._flags:
+                if (
+                    0 < job.time_remaining_seconds <= NEAR_END_SECONDS
+                    and job.progress_percent >= 50
+                    and "near_end" not in self._flags
+                ):
                     self._flags.add("near_end")
                     events.append(("near_end", record))
                 if state == RawPrinterState.ERROR:
@@ -179,8 +209,9 @@ class PrintTracker:
             elif job.job_id is None:
                 # The job is gone; the state tells how it ended (it may lag one poll behind).
                 state = t.raw_state
-                if state == RawPrinterState.FINISHED or (state in (RawPrinterState.IDLE, RawPrinterState.READY)
-                                                         and record["progress"] >= 98):
+                if state == RawPrinterState.FINISHED or (
+                    state in (RawPrinterState.IDLE, RawPrinterState.READY) and record["progress"] >= 98
+                ):
                     record["progress"] = 100.0
                     events.append(("finished", self._finish_active("finished")))
                 elif state == RawPrinterState.STOPPED or state in (RawPrinterState.IDLE, RawPrinterState.READY):

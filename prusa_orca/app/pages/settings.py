@@ -12,9 +12,16 @@ from .base import TabHandler
 
 
 class SettingsTab(TabHandler):
-    COMMANDS: ClassVar[Mapping[str, str]] = {"save_settings": "save", "login_start": "login_start", "login_finish": "login_finish",
-                "logout": "logout", "fill_from_connect": "fill_from_connect", "list_printers": "list_printers",
-                "choose_printer": "choose_printer", "test_notify": "test_notify"}
+    COMMANDS: ClassVar[Mapping[str, str]] = {
+        "save_settings": "save",
+        "login_start": "login_start",
+        "login_finish": "login_finish",
+        "logout": "logout",
+        "fill_from_connect": "fill_from_connect",
+        "list_printers": "list_printers",
+        "choose_printer": "choose_printer",
+        "test_notify": "test_notify",
+    }
 
     def send_settings(self) -> None:
         self.page.post_message({"type": "settings", "data": self.rt.settings.public_view()})
@@ -31,16 +38,19 @@ class SettingsTab(TabHandler):
         verifier, challenge = generate_pkce_pair()
         self.rt.pending_verifier = verifier
         webbrowser.open(build_authorize_url(challenge))
-        self.page.say("Log in in your browser. The last step tries to open PrusaSlicer: cancel that, "
-                      "copy the prusaslicer://login?code=... address and paste it above.")
+        self.page.say(
+            "Log in in your browser. The last step tries to open PrusaSlicer: cancel that, "
+            "copy the prusaslicer://login?code=... address and paste it above."
+        )
 
     def login_finish(self, message: dict[str, Any]) -> None:
         rt = self.rt
         code = code_from_redirect(str(message.get("code") or ""))
         if not code or not rt.pending_verifier:
             self.page.say("Press Log in first, then paste the redirect address.")
-            self.page.post_message({"type": "wizard", "step": "login_failed",
-                                    "text": "open the login page first, then paste the address it ends on"})
+            self.page.post_message(
+                {"type": "wizard", "step": "login_failed", "text": "open the login page first, then paste the address it ends on"}
+            )
             return
         verifier, rt.pending_verifier = rt.pending_verifier, ""
 

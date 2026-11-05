@@ -13,7 +13,12 @@ from .base import TabHandler
 
 
 class HistoryTab(TabHandler):
-    COMMANDS: ClassVar[Mapping[str, str]] = {"history": "history", "history_shot": "shot", "history_remove": "remove", "history_open": "open"}
+    COMMANDS: ClassVar[Mapping[str, str]] = {
+        "history": "history",
+        "history_shot": "shot",
+        "history_remove": "remove",
+        "history_open": "open",
+    }
 
     def _folder(self) -> str:
         return os.path.join(self.rt.settings.data_dir, "history")

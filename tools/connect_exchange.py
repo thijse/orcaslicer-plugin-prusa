@@ -18,18 +18,25 @@ def main() -> int:
     pending = os.path.join(DATA_DIR, "pkce_pending.json")
     with open(pending, encoding="utf-8") as f:
         verifier = json.load(f)["verifier"]
-    body = urllib.parse.urlencode({
-        "grant_type": "authorization_code",
-        "client_id": CLIENT_ID,
-        "code": code,
-        "redirect_uri": "prusaslicer://login",
-        "code_verifier": verifier,
-    }).encode()
-    req = urllib.request.Request("https://account.prusa3d.com/o/token/", data=body,
-                                 headers={"Content-Type": "application/x-www-form-urlencoded",
-                                          # Cloudflare answers 1010 to Python's default User-Agent.
-                                          "User-Agent": "PrusaSlicer/2.9.0"},
-                                 method="POST")
+    body = urllib.parse.urlencode(
+        {
+            "grant_type": "authorization_code",
+            "client_id": CLIENT_ID,
+            "code": code,
+            "redirect_uri": "prusaslicer://login",
+            "code_verifier": verifier,
+        }
+    ).encode()
+    req = urllib.request.Request(
+        "https://account.prusa3d.com/o/token/",
+        data=body,
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            # Cloudflare answers 1010 to Python's default User-Agent.
+            "User-Agent": "PrusaSlicer/2.9.0",
+        },
+        method="POST",
+    )
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read())

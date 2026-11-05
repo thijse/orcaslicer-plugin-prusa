@@ -1,7 +1,8 @@
 """Dev helper: screenshot Orca's main window per tab, as PNG plus a small JPEG for review.
 
-  python tools/orca_shot.py OUT_DIR [tab ...]     tabs: monitor, printer_web, prusa, prepare, preview (default: monitor prusa)
+python tools/orca_shot.py OUT_DIR [tab ...]     tabs: monitor, printer_web, prusa, prepare, preview (default: monitor prusa)
 """
+
 import os
 import re
 import sys

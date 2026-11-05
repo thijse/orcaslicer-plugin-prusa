@@ -30,8 +30,12 @@ if orca is not None:
     @orca.plugin
     class PrusaPlugin(orca.base):
         def register_capabilities(self) -> None:
-            hosts = ["https://account.prusa3d.com", "https://connect.prusa3d.com", "https://connect-api.prusa3d.com",
-                     "https://camera-service-snapshots.prusa3d.com"]
+            hosts = [
+                "https://account.prusa3d.com",
+                "https://connect.prusa3d.com",
+                "https://connect-api.prusa3d.com",
+                "https://camera-service-snapshots.prusa3d.com",
+            ]
             hosts += _configured_hosts()
             # network= grants whole hosts up front; network_http only covers exact URLs and
             # would prompt again for every PrusaLink endpoint the poller calls.
@@ -40,4 +44,3 @@ if orca is not None:
             orca.request_permissions(network=hosts, fs_read=[jobs], threading=True)
             orca.register_capability(PrusaPrinterAgent)
             orca.register_capability(PrusaPage)
-

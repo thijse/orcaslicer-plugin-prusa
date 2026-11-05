@@ -100,8 +100,9 @@ class PrusaLinkBackend:
         passwords = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         passwords.add_password(None, self.base_url, username or "maker", secret)
         # Never route LAN calls through a system/PAC proxy; corporate proxies answer 403 for private IPs.
-        self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}),
-                                                   urllib.request.HTTPDigestAuthHandler(passwords))
+        self._opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}), urllib.request.HTTPDigestAuthHandler(passwords)
+        )
 
     def _get(self, path: str) -> tuple[int, Any]:
         req = urllib.request.Request(self.base_url + path, headers={"Accept": "application/json"})
@@ -152,8 +153,9 @@ class PrusaLinkBackend:
             return False, f"No answer from {self.host}. Check that the printer is on and PrusaLink is enabled."
         return False, f"The printer answered HTTP {code}."
 
-    def _send(self, method: str, path: str, headers: dict[str, str] | None = None, data: Any = None,
-              timeout: float | None = None) -> int:
+    def _send(
+        self, method: str, path: str, headers: dict[str, str] | None = None, data: Any = None, timeout: float | None = None
+    ) -> int:
         req = urllib.request.Request(self.base_url + path, data=data, method=method, headers=headers or {})
         try:
             with self._opener.open(req, timeout=timeout or self.timeout) as resp:
@@ -170,8 +172,14 @@ class PrusaLinkBackend:
                 return storage.get("path", "/usb/").strip("/")
         return "usb"
 
-    def upload(self, local_path: str, remote_name: str, print_after: bool,
-               progress: Callable[[int], None] | None = None, cancelled: Callable[[], bool] | None = None) -> int:
+    def upload(
+        self,
+        local_path: str,
+        remote_name: str,
+        print_after: bool,
+        progress: Callable[[int], None] | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> int:
         """PUT a G-code file to the printer's storage; returns the HTTP status (201 on success)."""
         storage = self.storage_path()
         size = os.path.getsize(local_path)
@@ -189,9 +197,13 @@ class PrusaLinkBackend:
         conn = http.client.HTTPConnection(self.host, timeout=max(120.0, size / 10_000))
         try:
             conn.putrequest("PUT", path)
-            for key, value in {"X-Api-Key": self._secret, "Content-Type": "application/octet-stream",
-                               "Content-Length": str(size), "Overwrite": "?0",
-                               "Print-After-Upload": "?1" if print_after else "?0"}.items():
+            for key, value in {
+                "X-Api-Key": self._secret,
+                "Content-Type": "application/octet-stream",
+                "Content-Length": str(size),
+                "Overwrite": "?0",
+                "Print-After-Upload": "?1" if print_after else "?0",
+            }.items():
                 conn.putheader(key, value)
             conn.endheaders()
             sent = 0

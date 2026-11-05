@@ -21,8 +21,9 @@ def _hex(colour: str) -> str:
     return (colour or "").strip().upper()[:7]
 
 
-def compare(tools: list[ToolState], presets: Iterable[FilamentPreset], slot_presets: list[str],
-            slot_colours: list[str]) -> list[dict[str, Any]]:
+def compare(
+    tools: list[ToolState], presets: Iterable[FilamentPreset], slot_presets: list[str], slot_colours: list[str]
+) -> list[dict[str, Any]]:
     presets = list(presets)
     rows = []
     for tool in tools:
@@ -36,17 +37,25 @@ def compare(tools: list[ToolState], presets: Iterable[FilamentPreset], slot_pres
         slot_type = next((p.type for p in presets if slot and p.name == slot["preset"]), "")
         # A bare material type ("PLA") says nothing against a more specific preset of that type.
         specific = bool(tool.vendor or tool.name)
-        preset_differs = bool(slot and match and slot["preset"] != match.name
-                              and (specific or slot_type.upper() != tool.material.upper()))
-        rows.append({
-            "tool_number": tool.tool_number,
-            "printer": {"material": tool.material, "name": tool.name, "vendor": tool.vendor,
-                        "color": color, "loaded": loaded},
-            "match": match.name if match else "",
-            "slot": slot,
-            "preset_differs": preset_differs,
-            "color_differs": bool(slot and color and _hex(slot["color"]) != color),
-        })
+        preset_differs = bool(
+            slot and match and slot["preset"] != match.name and (specific or slot_type.upper() != tool.material.upper())
+        )
+        rows.append(
+            {
+                "tool_number": tool.tool_number,
+                "printer": {
+                    "material": tool.material,
+                    "name": tool.name,
+                    "vendor": tool.vendor,
+                    "color": color,
+                    "loaded": loaded,
+                },
+                "match": match.name if match else "",
+                "slot": slot,
+                "preset_differs": preset_differs,
+                "color_differs": bool(slot and color and _hex(slot["color"]) != color),
+            }
+        )
     return rows
 
 

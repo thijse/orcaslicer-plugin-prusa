@@ -13,7 +13,13 @@ from .base import TabHandler
 
 
 class StatusTab(TabHandler):
-    COMMANDS: ClassVar[Mapping[str, str]] = {"poll": "poll", "refresh": "refresh", "snapshot": "snapshot", "job": "job", "control": "control"}
+    COMMANDS: ClassVar[Mapping[str, str]] = {
+        "poll": "poll",
+        "refresh": "refresh",
+        "snapshot": "snapshot",
+        "job": "job",
+        "control": "control",
+    }
 
     def poll(self, message: dict[str, Any]) -> None:
         self.page.push()
@@ -29,8 +35,13 @@ class StatusTab(TabHandler):
         # Shares the cache the Device tab's camera reads, refreshed in the background.
         image = self.rt.snapshot_image()
         if image:
-            self.page.post_message({"type": "snapshot", "taken": time.strftime("%H:%M:%S"),
-                                    "data": "data:image/jpeg;base64," + base64.b64encode(image).decode("ascii")})
+            self.page.post_message(
+                {
+                    "type": "snapshot",
+                    "taken": time.strftime("%H:%M:%S"),
+                    "data": "data:image/jpeg;base64," + base64.b64encode(image).decode("ascii"),
+                }
+            )
 
     def job(self, message: dict[str, Any]) -> None:
         action = str(message.get("action") or "")

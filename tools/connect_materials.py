@@ -1,8 +1,9 @@
 """Dev helper: search Connect's material database, and optionally record one on a tool.
 
-  python tools/connect_materials.py search "Prusament PLA Galaxy Black" [--type PLA]
-  python tools/connect_materials.py assign <tool 1-5> <material-uuid>   (label only; no filament moves)
+python tools/connect_materials.py search "Prusament PLA Galaxy Black" [--type PLA]
+python tools/connect_materials.py assign <tool 1-5> <material-uuid>   (label only; no filament moves)
 """
+
 import argparse
 import os
 import sys
@@ -27,8 +28,18 @@ backend = ConnectBackend(TokenStore(settings.tokens_path), settings.values["conn
 if args.cmd == "search":
     for item in backend.search_materials(args.text, args.type):
         m = item.get("material") or {}
-        print(item["uuid"], "|", (m.get("brand") or {}).get("name"), "|", m.get("name"), "|", m.get("abbreviation"),
-              "|", (m.get("primaryColor") or {}).get("colorRgba"), "| custom" if item.get("isCustom") else "")
+        print(
+            item["uuid"],
+            "|",
+            (m.get("brand") or {}).get("name"),
+            "|",
+            m.get("name"),
+            "|",
+            m.get("abbreviation"),
+            "|",
+            (m.get("primaryColor") or {}).get("colorRgba"),
+            "| custom" if item.get("isCustom") else "",
+        )
 else:
     backend.assign_material(args.tool - 1, {"uuid": args.uuid})
     print("assigned")

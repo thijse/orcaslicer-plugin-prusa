@@ -76,15 +76,32 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
         self._callbacks[key] = fn
         return OK
 
-    def set_server_callback(self, fn): return self._store("server_error", fn)
-    def set_on_ssdp_msg_fn(self, fn): return self._store("ssdp", fn)
-    def set_on_printer_connected_fn(self, fn): return self._store("printer_connected", fn)
-    def set_on_subscribe_failure_fn(self, fn): return self._store("subscribe_failure", fn)
-    def set_on_message_fn(self, fn): return self._store("message", fn)
-    def set_on_user_message_fn(self, fn): return self._store("user_message", fn)
-    def set_on_local_connect_fn(self, fn): return self._store("local_connect", fn)
-    def set_on_local_message_fn(self, fn): return self._store("local_message", fn)
-    def set_queue_on_main_fn(self, fn): return self._store("queue_on_main", fn)
+    def set_server_callback(self, fn):
+        return self._store("server_error", fn)
+
+    def set_on_ssdp_msg_fn(self, fn):
+        return self._store("ssdp", fn)
+
+    def set_on_printer_connected_fn(self, fn):
+        return self._store("printer_connected", fn)
+
+    def set_on_subscribe_failure_fn(self, fn):
+        return self._store("subscribe_failure", fn)
+
+    def set_on_message_fn(self, fn):
+        return self._store("message", fn)
+
+    def set_on_user_message_fn(self, fn):
+        return self._store("user_message", fn)
+
+    def set_on_local_connect_fn(self, fn):
+        return self._store("local_connect", fn)
+
+    def set_on_local_message_fn(self, fn):
+        return self._store("local_message", fn)
+
+    def set_queue_on_main_fn(self, fn):
+        return self._store("queue_on_main", fn)
 
     def _emit(self, key: str, *args: Any) -> None:
         fn = self._callbacks.get(key)
@@ -102,11 +119,22 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
         if not dev_id:
             return
         printer = rt.settings.values["printer"]
-        self._emit("ssdp", json.dumps({
-            "dev_name": printer.get("name") or "Prusa", "dev_id": dev_id, "dev_ip": host or dev_id,
-            "dev_type": printer.get("model_id", ""), "dev_signal": "0", "connect_type": "lan",
-            "bind_state": "free", "sec_link": "secure", "ssdp_version": "v1",
-        }))
+        self._emit(
+            "ssdp",
+            json.dumps(
+                {
+                    "dev_name": printer.get("name") or "Prusa",
+                    "dev_id": dev_id,
+                    "dev_ip": host or dev_id,
+                    "dev_type": printer.get("model_id", ""),
+                    "dev_signal": "0",
+                    "connect_type": "lan",
+                    "bind_state": "free",
+                    "sec_link": "secure",
+                    "ssdp_version": "v1",
+                }
+            ),
+        )
 
     def start_discovery(self, start: bool, sending: bool) -> bool:
         if start:
@@ -219,8 +247,9 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
             return ERR_BUSY
         return OK if ok else ERR_NOT_SUPPORTED
 
-    def command_axis_control(self, dev_id, axis, unit, input_val, speed, is_core_xy, supports_mqtt_axis_control,
-                             sequence_id, lan_mode):
+    def command_axis_control(
+        self, dev_id, axis, unit, input_val, speed, is_core_xy, supports_mqtt_axis_control, sequence_id, lan_mode
+    ):
         # The XL is CoreXY; Orca flips Y and Z for printers it doesn't know, so send the value as clicked.
         distance = round(input_val * unit, 2)
         if axis in ("X", "Y"):
@@ -248,8 +277,13 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
                 raise RuntimeError(f"the printer answered HTTP {status}")
 
         try:
-            rt.tasks.submit(f"{action.capitalize()} print", work, kind="job", resource="job",
-                            on_done=lambda t: t.state != "done" and warn(f"{t.label}: {t.error}"))
+            rt.tasks.submit(
+                f"{action.capitalize()} print",
+                work,
+                kind="job",
+                resource="job",
+                on_done=lambda t: t.state != "done" and warn(f"{t.label}: {t.error}"),
+            )
         except TaskBusy as exc:
             warn(str(exc))
             return ERR_BUSY
@@ -273,9 +307,13 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
             LOG.info("T%d material set to %s", tool_index + 1, assigned)
 
         try:
-            rt.tasks.submit(f"T{tool_index + 1}: setting the filament", work, kind="command",
-                            resource=f"tool-{tool_index + 1}",
-                            on_done=lambda t: t.state != "done" and warn(f"{t.label}: {t.error}"))
+            rt.tasks.submit(
+                f"T{tool_index + 1}: setting the filament",
+                work,
+                kind="command",
+                resource=f"tool-{tool_index + 1}",
+                on_done=lambda t: t.state != "done" and warn(f"{t.label}: {t.error}"),
+            )
         except TaskBusy as exc:
             warn(str(exc))
             return ERR_BUSY
@@ -356,12 +394,25 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
                 if not self._confirm_preflight(check, name):
                     stage(STAGE_ERROR, -1, "; ".join(check.problems + check.warnings))
                     return -1
-            record = new_record(name, params.project_name or "", plate, _project_path(), _preset_names(),
-                                gcode_meta.summary(meta), print_after, check.problems + check.warnings)
+            record = new_record(
+                name,
+                params.project_name or "",
+                plate,
+                _project_path(),
+                _preset_names(),
+                gcode_meta.summary(meta),
+                print_after,
+                check.problems + check.warnings,
+            )
             rt.tracker.handover(record)
             LOG.info("%s %s (%d bytes)", "print" if print_after else "upload", name, os.path.getsize(gcode))
-            status = lan.upload(gcode, name, print_after, progress=lambda pct: stage(STAGE_UPLOAD, pct, name),
-                                cancelled=(lambda: bool(cancel_fn())) if cancel_fn is not None else None)
+            status = lan.upload(
+                gcode,
+                name,
+                print_after,
+                progress=lambda pct: stage(STAGE_UPLOAD, pct, name),
+                cancelled=(lambda: bool(cancel_fn())) if cancel_fn is not None else None,
+            )
         except InterruptedError:
             if record is not None:
                 rt.tracker.upload_failed(record, "Cancelled in Orca.")
@@ -405,9 +456,17 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
         return OK
 
     # The Python bridge has no fallback for these; without overrides they answer -1.
-    def check_cert(self): return OK
-    def ping_bind(self, ping_code): return OK
-    def bind(self, dev_ip, dev_id, dev_model, sec_link, timezone, improved, update_fn): return OK
-    def unbind(self, dev_id): return OK
-    def request_bind_ticket(self): return (OK, "")
+    def check_cert(self):
+        return OK
 
+    def ping_bind(self, ping_code):
+        return OK
+
+    def bind(self, dev_ip, dev_id, dev_model, sec_link, timezone, improved, update_fn):
+        return OK
+
+    def unbind(self, dev_id):
+        return OK
+
+    def request_bind_ticket(self):
+        return (OK, "")

@@ -39,13 +39,16 @@ MODELS: dict[str, PrinterModel] = {
     "2.1.0": PrinterModel("MINI", "Prusa MINI", "mini", "MINI", nozzle_max=280, bed_max=100),
     "3.1.0": PrinterModel("XL", "Prusa XL", "xl", "Prusa XL"),
     "3.1.1": PrinterModel("XLP", "Prusa XL+", "xl", "Prusa XL", orca_name="Prusa XL"),
-    "7.1.0": PrinterModel("COREONE", "Prusa CORE One", "coreone", "Prusa_CORE_One", "Prusa_CORE_One_MMU3", chamber=True,
-                           hf_presets=True),
-    "7.10.0": PrinterModel("COREONEINDX", "Prusa CORE One INDX", "coreone", "prusa_coreone_indx_4t", chamber=True,
-                            hf_presets=True),
+    "7.1.0": PrinterModel(
+        "COREONE", "Prusa CORE One", "coreone", "Prusa_CORE_One", "Prusa_CORE_One_MMU3", chamber=True, hf_presets=True
+    ),
+    "7.10.0": PrinterModel(
+        "COREONEINDX", "Prusa CORE One INDX", "coreone", "prusa_coreone_indx_4t", chamber=True, hf_presets=True
+    ),
     "8.1.0": PrinterModel("COREONEL", "Prusa CORE One L", "coreone", "Prusa_CORE_One_L", chamber=True, hf_presets=True),
-    "8.10.0": PrinterModel("COREONEL-INDX", "Prusa CORE One L INDX", "coreone", "Prusa_CORE_One_L", chamber=True,
-                           orca_name="Prusa CORE One L"),
+    "8.10.0": PrinterModel(
+        "COREONEL-INDX", "Prusa CORE One L INDX", "coreone", "Prusa_CORE_One_L", chamber=True, orca_name="Prusa CORE One L"
+    ),
 }
 
 # Orca has separate profiles for the XL by tool count and the INDX by head count.
@@ -66,9 +69,11 @@ def same_model(orca_printer_model: str, model: PrinterModel) -> bool:
 
     Variants Orca keeps as separate models (MMU3, HF nozzle, input shaper, tool count) count as the same printer.
     """
+
     def base(text: str) -> str:
         text = re.sub(r"\b(MMU3|HF|IS|INDX|\d+T)\b", " ", text.upper().replace("MINIIS", "MINI"))
         return " ".join(text.replace("+", "").split())
+
     return base(orca_printer_model) == base(model.sliced_name)
 
 
@@ -88,5 +93,4 @@ def identify(detail: dict[str, Any], heads: int, mmu: bool) -> dict[str, str]:
     model = model_for(str(detail.get("printer_type") or ""))
     if model is None:
         return {}
-    return {"model": model.code, "family": model.family, "model_id": orca_model_id(model, heads, mmu),
-            "model_name": model.name}
+    return {"model": model.code, "family": model.family, "model_id": orca_model_id(model, heads, mmu), "model_name": model.name}
