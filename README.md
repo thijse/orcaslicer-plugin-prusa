@@ -61,7 +61,7 @@ The **setup wizard** opens the first time you open the Prusa tab; later you find
 1. **Log in to Prusa Connect** in your browser and paste the address the login ends on.
 2. **Pick your printer.** The plugin reads its network address, PrusaLink API key and camera from Prusa Connect, so there is nothing to type.
 3. **Save and test.** The wizard checks that the printer answers over your network.
-4. In Orca's printer preset, select **Prusa (Link + Connect)** as the printer agent. Then pick the printer in the Device tab.
+4. In Orca, turn on **Preferences > Developer > Use printer agents instead of print hosts**. Then select **Prusa (Link + Connect)** as the printer agent in the printer preset, and pick the printer in the Device tab.
 
 <details>
 <summary>No Prusa Connect account? Set up PrusaLink by hand</summary>
@@ -104,6 +104,7 @@ The plugin logs in to Prusa Connect with PrusaSlicer's sign-in: log in in the br
 
 Any help on making the plugin more robust and feature complete is very welcome. Also testing it with different prusa printers and firmwares.
 
+- **OrcaSlicer's plugin system:** [Plugin System Overview](https://github.com/OrcaSlicer/OrcaSlicer/wiki/plugin_system), [Plugin Development](https://github.com/OrcaSlicer/OrcaSlicer/wiki/plugin_development), the [Printer Agent](https://github.com/OrcaSlicer/OrcaSlicer/wiki/printer_agent) and [Pages](https://github.com/OrcaSlicer/OrcaSlicer/wiki/pages) APIs, and the [Plugin Audit Hook](https://github.com/OrcaSlicer/OrcaSlicer/wiki/plugin_audit_hook) (permissions).
 - **Code layout:** [docs/architecture.md](docs/architecture.md). The core logic is plain Python with tests; only `prusa_orca/app` talks to Orca.
 - **Checks:** install [uv](https://docs.astral.sh/uv/), then `uv sync` and `uv run python scripts/check.py`. This runs Ruff, basedpyright, the layer contracts and pytest, the same as CI does on every push. Conventions for contributors and coding agents are in [AGENTS.md](AGENTS.md).
 - **Dev scripts:** the scripts in `tools/` drive a running OrcaSlicer through its MCP server. Set `ORCASLICER_SRC` to your OrcaSlicer source folder.

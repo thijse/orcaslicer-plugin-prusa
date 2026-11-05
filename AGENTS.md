@@ -2,6 +2,8 @@
 
 OrcaSlicer plugin (Python) for Prusa Buddy printers over PrusaLink and Prusa Connect. User-facing overview: [README.md](README.md). Design: [docs/architecture.md](docs/architecture.md). Gaps in Orca's plugin API: [docs/upstream-gaps.md](docs/upstream-gaps.md).
 
+Orca's plugin contract: [Plugin System Overview](https://github.com/OrcaSlicer/OrcaSlicer/wiki/plugin_system), [Plugin Development](https://github.com/OrcaSlicer/OrcaSlicer/wiki/plugin_development), [Printer Agent](https://github.com/OrcaSlicer/OrcaSlicer/wiki/printer_agent), [Pages](https://github.com/OrcaSlicer/OrcaSlicer/wiki/pages), [Plugin Audit Hook](https://github.com/OrcaSlicer/OrcaSlicer/wiki/plugin_audit_hook). Keep the plugin name, the capability names (`prusa3d_plugin`, `Prusa`) and the agent ID stable, because presets store them.
+
 ## Commands
 
 ```sh
