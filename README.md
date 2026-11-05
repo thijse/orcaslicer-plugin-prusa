@@ -7,7 +7,7 @@ Use your Prusa printer from OrcaSlicer like a Bambu printer: send and print in o
 Works with Prusa printers running Buddy firmware: **XL** (1–5 tools), **MK4 / MK4S**, **MK3.5 / MK3.9**, **MINI / MINI+** and **CORE One** (including MMU3 and INDX). Talks to the printer over your network (PrusaLink) and, optionally, through Prusa Connect.
 
 > [!NOTE]
-> Experimental. Needs an OrcaSlicer build with Python plugin support. Developed and tested on a Prusa XL 5T; other models are supported from Prusa's firmware data but less tested.
+> Very experimental. Needs an OrcaSlicer 2.5 build with Python plugin support. Developed and tested only on a Prusa XL 5T; other models should be supported from Prusa's firmware data but not tested.
 
 [Install](#install) · [What you get](#what-you-get) · [Setup](#set-up-your-printer) · [Safety](#what-the-plugin-will-and-wont-do) · [Troubleshooting](#troubleshooting)
 
@@ -43,7 +43,7 @@ It follows Orca's light and dark themes.
 
 ## Install
 
-1. Use an OrcaSlicer build with Python plugin support. It needs the plugin API with the `printer_agent` and `pages` capabilities.
+1. Use an OrcaSlicer build with Python plugin support, tested against 2.5RC . It needs the plugin API with the `printer_agent` and `pages` capabilities.
 2. Download this repository: **Code → Download ZIP**, or `git clone`.
 3. Put the folder in OrcaSlicer's plugin folder as `orca_plugins/prusa`. On Windows:
 
