@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, Protocol
+from collections.abc import Callable, Mapping
+from typing import Any, ClassVar, Protocol
 
 from ...backends.prusalink import PrusaLinkBackend
 from ..runtime import Runtime, runtime
@@ -20,7 +21,7 @@ class Page(Protocol):
 class TabHandler:
     """Commands of one side tab. COMMANDS maps a page command to a method taking the message."""
 
-    COMMANDS: dict[str, str] = {}
+    COMMANDS: ClassVar[Mapping[str, str]] = {}
 
     def __init__(self, page: Page) -> None:
         self.page = page
@@ -29,7 +30,7 @@ class TabHandler:
     def rt(self) -> Runtime:
         return runtime()
 
-    def lan(self) -> Optional[PrusaLinkBackend]:
+    def lan(self) -> PrusaLinkBackend | None:
         lan = self.rt.backend.lan if self.rt.backend else None
         if lan is None:
             self.page.say("Set the PrusaLink host in Settings first.")

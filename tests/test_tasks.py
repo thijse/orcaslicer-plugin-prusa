@@ -7,10 +7,10 @@ import urllib.error
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from prusa_orca import tasks  # noqa: E402
-from prusa_orca.backends.aggregate import AggregateBackend  # noqa: E402
-from prusa_orca.model import PrinterTelemetry  # noqa: E402
-from prusa_orca.tasks import TaskBusy, TaskRunner, reason  # noqa: E402
+from prusa_orca import tasks
+from prusa_orca.backends.aggregate import AggregateBackend
+from prusa_orca.model import PrinterTelemetry
+from prusa_orca.tasks import TaskBusy, TaskRunner, reason
 
 
 class TestTaskRunner(unittest.TestCase):

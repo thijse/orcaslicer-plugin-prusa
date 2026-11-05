@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Optional
+from enum import StrEnum
 
 
-class RawPrinterState(str, Enum):
+class RawPrinterState(StrEnum):
     IDLE = "IDLE"
     BUSY = "BUSY"
     PRINTING = "PRINTING"
@@ -21,7 +19,7 @@ class RawPrinterState(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
-class InterpretedPhase(str, Enum):
+class InterpretedPhase(StrEnum):
     OFFLINE = "offline"
     IDLE = "idle"
     HEATING_BED = "heating_bed"
@@ -68,7 +66,7 @@ class ToolState:
 
 @dataclass
 class JobState:
-    job_id: Optional[int] = None
+    job_id: int | None = None
     state: RawPrinterState = RawPrinterState.IDLE
     file_name: str = ""
     display_name: str = ""
@@ -80,7 +78,7 @@ class JobState:
     total_height: float = 0.0
     layer_height: float = 0.0
 
-    def estimate_layers(self, z: Optional[float], previous: int = 0) -> None:
+    def estimate_layers(self, z: float | None, previous: int = 0) -> None:
         """Layer numbers from heights; the printer reports none. `previous` is the last estimate for this job."""
         if self.layer_height <= 0 or self.total_height <= 0:
             return
@@ -135,9 +133,9 @@ class PrinterTelemetry:
     fan_speed_pwm: int = 0
     fan_print_rpm: int = 0
     fan_hotend_rpm: int = 0
-    axis_x: Optional[float] = None
-    axis_y: Optional[float] = None
-    axis_z: Optional[float] = None
+    axis_x: float | None = None
+    axis_y: float | None = None
+    axis_z: float | None = None
 
     # Multi-tool
     tools: list[ToolState] = field(default_factory=list)
@@ -146,7 +144,7 @@ class PrinterTelemetry:
     # Job & storage
     job: JobState = field(default_factory=JobState)
     storage_available: bool = True
-    active_dialog: Optional[DialogInfo] = None
+    active_dialog: DialogInfo | None = None
 
     # Telemetry metadata
     last_updated: float = 0.0

@@ -2,17 +2,13 @@
 
   python tools/orca_send_test.py [--press]   --press also clicks Send (uploads a file; never prints)
 """
-import json
-import os
 import re
 import sys
 import time
 
-sys.path.insert(0, os.path.join(os.environ.get("ORCASLICER_SRC", r"D:\Github\OrcaSlicer"), "tools", "mcp"))
-from orca_mcp import OrcaMcp  # noqa: E402
+from orca_client import connect
 
-info = json.load(open(os.path.join(os.environ["APPDATA"], "OrcaSlicer", "mcp", "server.json")))
-o = OrcaMcp(port=int(info["port"]), token=info["token"])
+o = connect()
 
 
 def snap(root="all"):
@@ -20,7 +16,7 @@ def snap(root="all"):
 
 
 o.call_raw("run_action", {"id": "orca_command:add_primitive_cube:orca"})
-for d in o.call("get_state")["dialogs"]:
+for _ in o.call("get_state")["dialogs"]:
     o.call_raw("dialog_respond", {"button": "OK"})
 o.call_raw("slice", {})
 o.call_raw("wait", {"for": "idle", "timeout_s": 50})

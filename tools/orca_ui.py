@@ -2,15 +2,11 @@
 
 Usage: python tools/orca_ui.py [marker] [length]
 """
-import json
-import os
 import sys
 
-sys.path.insert(0, os.path.join(os.environ.get("ORCASLICER_SRC", r"D:\Github\OrcaSlicer"), "tools", "mcp"))
-from orca_mcp import OrcaMcp  # noqa: E402
+from orca_client import connect
 
-info = json.load(open(os.path.join(os.environ["APPDATA"], "OrcaSlicer", "mcp", "server.json")))
-o = OrcaMcp(port=int(info["port"]), token=info["token"])
+o = connect()
 for d in o.call("get_state")["dialogs"]:
     print("DIALOG:", d["title"], "|", d.get("message", "")[:600].replace("\n", " / "),
           "| buttons:", [b["label"] for b in d.get("buttons", [])][:12])

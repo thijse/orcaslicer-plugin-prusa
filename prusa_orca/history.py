@@ -12,7 +12,7 @@ import os
 import threading
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from .model import PrinterTelemetry, RawPrinterState
 
@@ -57,7 +57,7 @@ class PrintHistory:
         self.save()
         return record
 
-    def find(self, record_id: str) -> Optional[dict[str, Any]]:
+    def find(self, record_id: str) -> dict[str, Any] | None:
         return next((r for r in self.records if r.get("id") == record_id), None)
 
     def remove(self, record_id: str) -> None:
@@ -83,10 +83,10 @@ class PrintTracker:
 
     def __init__(self, history: PrintHistory) -> None:
         self.history = history
-        self.active: Optional[dict[str, Any]] = None
-        self._job_id: Optional[int] = None
+        self.active: dict[str, Any] | None = None
+        self._job_id: int | None = None
         self._flags: set[str] = set()
-        self._last: Optional[PrinterTelemetry] = None
+        self._last: PrinterTelemetry | None = None
 
     def handover(self, record: dict[str, Any]) -> None:
         """Orca sent a plate; the next job the printer starts with this file belongs to it."""
@@ -101,11 +101,11 @@ class PrintTracker:
             self.active = None
         self.history.save()
 
-    def _finish_active(self, result: str, error: str = "") -> Optional[dict[str, Any]]:
+    def _finish_active(self, result: str, error: str = "") -> dict[str, Any] | None:
         record = self.active
         if record is None:
             return None
-        if record["result"] in ("sending",) + OPEN_RESULTS:
+        if record["result"] in ("sending", *OPEN_RESULTS):
             record.update(result=result, ended=_now(), error=error or record.get("error", ""))
         self.active, self._job_id = None, None
         self.history.save()
@@ -116,7 +116,7 @@ class PrintTracker:
         want = record["file"].lower()
         return bool(name) and (name == want or name.startswith(want[:-6]) or want.startswith(name.split("~")[0]))
 
-    def update(self, t: Optional[PrinterTelemetry]) -> list[tuple[str, dict[str, Any]]]:
+    def update(self, t: PrinterTelemetry | None) -> list[tuple[str, dict[str, Any]]]:
         """Fold one status poll in; returns (event, record) pairs: started, first_layer, near_end,
         attention, paused, finished, stopped, failed."""
         events: list[tuple[str, dict[str, Any]]] = []

@@ -64,7 +64,7 @@ def main() -> int:
         if t.job:
             print(f"Job: {t.job.progress_percent}%, {t.job.time_remaining_seconds // 60} min left")
     elif args.command == "files":
-        code, body = lan._get(f"/api/v1/files/{lan.storage_path()}/")
+        _, body = lan._get(f"/api/v1/files/{lan.storage_path()}/")
         for f in (body or {}).get("children", []):
             print(f.get("name"), f.get("display_name", ""))
     elif args.command == "upload":

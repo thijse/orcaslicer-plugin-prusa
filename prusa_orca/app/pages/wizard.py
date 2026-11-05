@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, ClassVar
 
 from ...backends.connect import ConnectBackend
 from ...backends.prusalink import PrusaLinkBackend
@@ -11,7 +12,7 @@ from .base import TabHandler
 
 
 class SetupWizard(TabHandler):
-    COMMANDS = {"wizard_state": "state", "wizard_printers": "printers", "wizard_read": "read",
+    COMMANDS: ClassVar[Mapping[str, str]] = {"wizard_state": "state", "wizard_printers": "printers", "wizard_read": "read",
                 "wizard_apply": "apply", "wizard_test": "test"}
 
     def _post(self, step: str, **data: Any) -> None:

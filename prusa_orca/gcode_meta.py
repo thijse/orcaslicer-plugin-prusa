@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 
 # The config block and the time/filament summary sit at the end of the file.
 _TAIL_BYTES = 512 * 1024
@@ -117,7 +116,7 @@ def read(path: str) -> GcodeMeta:
     return meta
 
 
-def summary(meta: Optional[GcodeMeta]) -> dict:
+def summary(meta: GcodeMeta | None) -> dict:
     if meta is None:
         return {}
     return {"filament_types": meta.filament_types, "filament_presets": meta.filament_presets,

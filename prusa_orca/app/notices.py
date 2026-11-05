@@ -6,7 +6,6 @@ from typing import Any
 
 from .host import LOG, orca
 
-
 EVENT_TEXT = {
     "started": ("PrintInfoShortNotificationLevel", "Printing {file} on {printer}."),
     "first_layer": ("PrintInfoShortNotificationLevel", "{file}: first layer done; check it in the Prusa tab."),

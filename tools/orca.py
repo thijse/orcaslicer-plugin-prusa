@@ -3,11 +3,9 @@ import json
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.environ.get("ORCASLICER_SRC", r"D:\Github\OrcaSlicer"), "tools", "mcp"))
-from orca_mcp import OrcaMcp  # noqa: E402
+from orca_client import connect
 
-info = json.load(open(os.path.join(os.environ["APPDATA"], "OrcaSlicer", "mcp", "server.json")))
-o = OrcaMcp(port=int(info["port"]), token=info["token"])
+o = connect()
 args = json.loads(sys.argv[2]) if len(sys.argv) > 2 else {}
 r = o.call_raw(sys.argv[1], args)
 try:

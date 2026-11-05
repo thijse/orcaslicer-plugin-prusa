@@ -24,10 +24,11 @@ PROMPT = (
 
 def load_env() -> None:
     if os.path.exists(ENV):
-        for line in open(ENV, encoding="utf-8"):
-            if "=" in line and not line.lstrip().startswith("#"):
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip().strip('"'))
+        with open(ENV, encoding="utf-8") as f:
+            for line in f:
+                if "=" in line and not line.lstrip().startswith("#"):
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip().strip('"'))
 
 
 def main() -> None:

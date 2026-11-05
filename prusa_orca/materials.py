@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Optional
 
 from .model import ToolState
 
@@ -28,7 +28,7 @@ class FilamentIdResolver:
 
     def __init__(self, system_dir: str) -> None:
         self.system_dir = system_dir
-        self._by_name: Optional[dict[str, str]] = None
+        self._by_name: dict[str, str] | None = None
         self._cache: dict[str, str] = {}
 
     def _index(self) -> dict[str, str]:
@@ -82,7 +82,7 @@ def _norm(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (text or "").lower()).strip()
 
 
-def match_preset(tool: ToolState, presets: Iterable[FilamentPreset]) -> Optional[FilamentPreset]:
+def match_preset(tool: ToolState, presets: Iterable[FilamentPreset]) -> FilamentPreset | None:
     """Best compatible preset: exact vendor+name, then vendor+type, then Generic <type>, then any of the type."""
     if not tool.is_loaded or not tool.material:
         return None
@@ -106,7 +106,7 @@ def match_preset(tool: ToolState, presets: Iterable[FilamentPreset]) -> Optional
 
 
 def pick_connect_material(nodes: list[dict], vendor: str, name: str, material_type: str,
-                          color: str = "") -> Optional[dict]:
+                          color: str = "") -> dict | None:
     """Best Connect material-database entry for an Orca filament: same type, then vendor, name words and colour."""
     want_type = _norm(material_type)
     want_vendor = _norm(vendor)
@@ -129,7 +129,7 @@ def pick_connect_material(nodes: list[dict], vendor: str, name: str, material_ty
     return max(candidates, key=score) if candidates else None
 
 
-def tray_info_idx(tool: ToolState, preset: Optional[FilamentPreset]) -> str:
+def tray_info_idx(tool: ToolState, preset: FilamentPreset | None) -> str:
     # Orca falls back to "Generic <type>" for an unknown non-empty id; never use a 'P'-prefixed id (Bambu-only).
     if preset and preset.filament_id:
         return preset.filament_id

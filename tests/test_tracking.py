@@ -5,9 +5,9 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from prusa_orca import gcode_meta, preflight  # noqa: E402
-from prusa_orca.history import PrintHistory, PrintTracker, new_record  # noqa: E402
-from prusa_orca.model import JobState, PrinterTelemetry, RawPrinterState, ToolState  # noqa: E402
+from prusa_orca import gcode_meta, preflight
+from prusa_orca.history import PrintHistory, PrintTracker, new_record
+from prusa_orca.model import JobState, PrinterTelemetry, RawPrinterState, ToolState
 
 GCODE = """; HEADER_BLOCK_START
 ; model printing time: 1h 2m 3s; total estimated time: 1h 10m 0s

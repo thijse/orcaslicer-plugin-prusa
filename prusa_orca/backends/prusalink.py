@@ -12,7 +12,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 from ..model import JobState, PrinterTelemetry, RawPrinterState
 from ..phase import interpret_phase
@@ -114,7 +115,7 @@ class PrusaLinkBackend:
             LOG.debug("PrusaLink %s failed: %s", path, exc)
             return 0, None
 
-    def fetch_bytes(self, path: str) -> Optional[bytes]:
+    def fetch_bytes(self, path: str) -> bytes | None:
         """Raw GET (e.g. /thumb/l/usb/<file>); None on any failure."""
         try:
             # Thumbnails answer 401 to Digest; the API key works.
@@ -124,7 +125,7 @@ class PrusaLinkBackend:
         except (urllib.error.URLError, TimeoutError, OSError):
             return None
 
-    def fetch_status(self) -> Optional[PrinterTelemetry]:
+    def fetch_status(self) -> PrinterTelemetry | None:
         code, body = self._get("/api/v1/status")
         if code != 200 or not isinstance(body, dict):
             return None
@@ -136,7 +137,7 @@ class PrusaLinkBackend:
                 apply_job_detail(telemetry, job)
         return telemetry
 
-    def fetch_info(self) -> Optional[dict[str, Any]]:
+    def fetch_info(self) -> dict[str, Any] | None:
         code, body = self._get("/api/v1/info")
         return body if code == 200 else None
 
@@ -151,8 +152,8 @@ class PrusaLinkBackend:
             return False, f"No answer from {self.host}. Check that the printer is on and PrusaLink is enabled."
         return False, f"The printer answered HTTP {code}."
 
-    def _send(self, method: str, path: str, headers: Optional[dict[str, str]] = None, data: Any = None,
-              timeout: Optional[float] = None) -> int:
+    def _send(self, method: str, path: str, headers: dict[str, str] | None = None, data: Any = None,
+              timeout: float | None = None) -> int:
         req = urllib.request.Request(self.base_url + path, data=data, method=method, headers=headers or {})
         try:
             with self._opener.open(req, timeout=timeout or self.timeout) as resp:
@@ -170,7 +171,7 @@ class PrusaLinkBackend:
         return "usb"
 
     def upload(self, local_path: str, remote_name: str, print_after: bool,
-               progress: Optional[Callable[[int], None]] = None, cancelled: Optional[Callable[[], bool]] = None) -> int:
+               progress: Callable[[int], None] | None = None, cancelled: Callable[[], bool] | None = None) -> int:
         """PUT a G-code file to the printer's storage; returns the HTTP status (201 on success)."""
         storage = self.storage_path()
         size = os.path.getsize(local_path)

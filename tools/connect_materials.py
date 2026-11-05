@@ -9,8 +9,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from prusa_orca.backends.connect import ConnectBackend, TokenStore  # noqa: E402
-from prusa_orca.settings import Settings, default_data_dir  # noqa: E402
+from prusa_orca.backends.connect import ConnectBackend, TokenStore
+from prusa_orca.settings import Settings, default_data_dir
 
 parser = argparse.ArgumentParser()
 sub = parser.add_subparsers(dest="cmd", required=True)

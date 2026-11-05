@@ -5,20 +5,19 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from typing import Optional
 
-from .connect import ConnectBackend
 from ..consistency import serial_mismatch
 from ..model import PrinterTelemetry, ToolState
 from ..phase import interpret_phase
-from .prusalink import PrusaLinkBackend
 from ..tasks import reason as _reason
+from .connect import ConnectBackend
+from .prusalink import PrusaLinkBackend
 
 LOG = logging.getLogger("prusa_orca.backends.aggregate")
 
 
-def merge(lan: Optional[PrinterTelemetry], cloud: Optional[PrinterTelemetry],
-          previous: Optional[PrinterTelemetry] = None) -> Optional[PrinterTelemetry]:
+def merge(lan: PrinterTelemetry | None, cloud: PrinterTelemetry | None,
+          previous: PrinterTelemetry | None = None) -> PrinterTelemetry | None:
     if lan is None:
         return cloud
     if cloud is None:
@@ -50,17 +49,17 @@ def merge(lan: Optional[PrinterTelemetry], cloud: Optional[PrinterTelemetry],
 
 
 class AggregateBackend:
-    def __init__(self, lan: Optional[PrusaLinkBackend], cloud: Optional[ConnectBackend],
+    def __init__(self, lan: PrusaLinkBackend | None, cloud: ConnectBackend | None,
                  tools_interval: float = 30.0) -> None:
         self.lan = lan
         self.cloud = cloud
         self.tools_interval = tools_interval
-        self._cloud_snapshot: Optional[PrinterTelemetry] = None
+        self._cloud_snapshot: PrinterTelemetry | None = None
         self._cloud_fetched_at = 0.0
         self._cloud_busy = False
-        self.last_snapshot: Optional[PrinterTelemetry] = None
+        self.last_snapshot: PrinterTelemetry | None = None
         self.last_error = ""
-        self.lan_serial: Optional[str] = None  # read once from /api/v1/info
+        self.lan_serial: str | None = None  # read once from /api/v1/info
 
     @property
     def identity_error(self) -> str:
@@ -88,7 +87,7 @@ class AggregateBackend:
             self._cloud_fetched_at = time.time()
             self._cloud_busy = False
 
-    def fetch_status(self) -> Optional[PrinterTelemetry]:
+    def fetch_status(self) -> PrinterTelemetry | None:
         lan = None
         if self.lan is not None:
             lan = self.lan.fetch_status()

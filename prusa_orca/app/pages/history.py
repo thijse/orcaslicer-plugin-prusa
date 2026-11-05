@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import os
 import webbrowser
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, ClassVar
 
 from .base import TabHandler
 
 
 class HistoryTab(TabHandler):
-    COMMANDS = {"history": "history", "history_shot": "shot", "history_remove": "remove", "history_open": "open"}
+    COMMANDS: ClassVar[Mapping[str, str]] = {"history": "history", "history_shot": "shot", "history_remove": "remove", "history_open": "open"}
 
     def _folder(self) -> str:
         return os.path.join(self.rt.settings.data_dir, "history")
@@ -31,10 +33,8 @@ class HistoryTab(TabHandler):
         record = self.rt.history.find(str(message.get("id") or ""))
         if record is not None:
             for name in (record.get("snapshots") or {}).values():
-                try:
+                with contextlib.suppress(OSError):
                     os.remove(os.path.join(self._folder(), os.path.basename(name)))
-                except OSError:
-                    pass
             self.rt.history.remove(record["id"])
         self.history(message)
 

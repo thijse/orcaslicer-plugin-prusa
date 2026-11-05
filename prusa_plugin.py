@@ -20,7 +20,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
-from prusa_orca.app.host import orca  # noqa: E402
+from prusa_orca.app.host import orca
 
 if orca is not None:
     from prusa_orca.app.agent import PrusaPrinterAgent

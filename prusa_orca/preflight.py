@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 from .gcode_meta import GcodeMeta
-from .printers import is_prusa, model_for, same_model
 from .model import PrinterTelemetry, RawPrinterState
+from .printers import is_prusa, model_for, same_model
 
 READY_STATES = (RawPrinterState.IDLE, RawPrinterState.READY, RawPrinterState.FINISHED, RawPrinterState.STOPPED)
 
@@ -26,7 +25,7 @@ def _norm(text: str) -> str:
     return (text or "").strip().upper()
 
 
-def check(meta: GcodeMeta, telemetry: Optional[PrinterTelemetry], print_after: bool) -> Preflight:
+def check(meta: GcodeMeta, telemetry: PrinterTelemetry | None, print_after: bool) -> Preflight:
     result = Preflight()
     if telemetry is None or not telemetry.connected:
         result.warnings.append("The printer's status is unknown, so the tools couldn't be checked.")
@@ -72,7 +71,7 @@ def check(meta: GcodeMeta, telemetry: Optional[PrinterTelemetry], print_after: b
     return result
 
 
-def check_reprint(meta: GcodeMeta, telemetry: Optional[PrinterTelemetry]) -> Preflight:
+def check_reprint(meta: GcodeMeta, telemetry: PrinterTelemetry | None) -> Preflight:
     """Checks before printing a stored file again; the tools may have changed since it was sent."""
     if not meta.filament_types:
         return Preflight()

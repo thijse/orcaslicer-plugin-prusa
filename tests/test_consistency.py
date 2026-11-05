@@ -4,9 +4,9 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from prusa_orca import consistency, gcode_meta, preflight, printers  # noqa: E402
-from prusa_orca.backends.aggregate import AggregateBackend  # noqa: E402
-from prusa_orca.model import PrinterTelemetry, RawPrinterState, ToolState  # noqa: E402
+from prusa_orca import consistency, gcode_meta, preflight, printers
+from prusa_orca.backends.aggregate import AggregateBackend
+from prusa_orca.model import PrinterTelemetry, RawPrinterState, ToolState
 
 
 def printer(ptype="3.1.0", **tool):

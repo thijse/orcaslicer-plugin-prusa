@@ -9,6 +9,7 @@ from ..materials import FilamentPreset, match_preset
 from ..model import ToolState
 from .runtime import Runtime
 
+
 def tool_view(tool: ToolState, presets: list[FilamentPreset]) -> dict[str, Any]:
     preset = match_preset(tool, presets)
     material = (tool.material or "").upper()
@@ -38,7 +39,7 @@ EXTRA_COMMANDS = {
 }
 
 
-def extra_controls(rt: "Runtime", state: str) -> list[dict[str, Any]]:
+def extra_controls(rt: Runtime, state: str) -> list[dict[str, Any]]:
     """Single-argument commands from EXTRA_COMMANDS that this printer supports, with their argument."""
     backend = rt.backend
     cloud = backend.cloud if backend else None

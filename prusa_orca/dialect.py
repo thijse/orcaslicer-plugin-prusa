@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 from .model import PrinterTelemetry, RawPrinterState, ToolState
 
 
-def normalize_hex(color: Optional[str], default: str = "#FFFFFF") -> str:
+def normalize_hex(color: str | None, default: str = "#FFFFFF") -> str:
     """Normalize color to #RRGGBB format."""
     if not color:
         return default
@@ -44,7 +45,7 @@ def map_gcode_state(raw_state: RawPrinterState) -> str:
     return "IDLE"
 
 
-def build_ams_units(tools: list[ToolState], filament_id_for: Optional[Callable[[ToolState], str]] = None) -> dict[str, Any]:
+def build_ams_units(tools: list[ToolState], filament_id_for: Callable[[ToolState], str] | None = None) -> dict[str, Any]:
     """Tools as 4-tray AMS units: tools 1-4 in unit 0, tool 5 in unit 1."""
     ams_units = []
     ams_exist_bits = 0
@@ -120,7 +121,7 @@ def limits(telemetry: PrinterTelemetry) -> tuple[int, int]:
 
 
 def build_push_status(telemetry: PrinterTelemetry, sequence_id: int,
-                      filament_id_for: Optional[Callable[[ToolState], str]] = None) -> dict[str, Any]:
+                      filament_id_for: Callable[[ToolState], str] | None = None) -> dict[str, Any]:
     """Build complete push_status payload expected by OrcaSlicer DeviceManager."""
     state_str = map_gcode_state(telemetry.raw_state)
     stage = "2" if telemetry.is_printing else "1"

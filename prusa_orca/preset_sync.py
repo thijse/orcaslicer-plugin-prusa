@@ -7,7 +7,7 @@ preset (Orca models it as a Bambu extruder variant), so it is shown but not sync
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from .model import ToolState
 
@@ -23,7 +23,7 @@ def _list(value: Any) -> list[str]:
     return [v.strip().strip('"') for v in str(value).split(",") if v.strip()]
 
 
-def _float(text: str) -> Optional[float]:
+def _float(text: str) -> float | None:
     try:
         return float(text)
     except ValueError:

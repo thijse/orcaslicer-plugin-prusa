@@ -10,22 +10,21 @@ import http.server
 import logging
 import secrets
 import threading
-import time
-from typing import Callable, Optional
+from collections.abc import Callable
 
 LOG = logging.getLogger("prusa_orca.snapshot")
 
 
 class SnapshotServer:
-    def __init__(self, fetch: Callable[[], Optional[bytes]], interval: float = 10.0) -> None:
+    def __init__(self, fetch: Callable[[], bytes | None], interval: float = 10.0) -> None:
         self._fetch = fetch
         self._interval = interval
-        self._image: Optional[bytes] = None
+        self._image: bytes | None = None
         self._lock = threading.Lock()
         self._stop = threading.Event()
         # An unguessable path: other local programs can't read the camera by guessing the port.
         self._path = "/" + secrets.token_urlsafe(16) + ".jpg"
-        self._httpd: Optional[http.server.ThreadingHTTPServer] = None
+        self._httpd: http.server.ThreadingHTTPServer | None = None
 
     @property
     def url(self) -> str:
@@ -33,7 +32,7 @@ class SnapshotServer:
             return ""
         return f"http://127.0.0.1:{self._httpd.server_address[1]}{self._path}"
 
-    def image(self) -> Optional[bytes]:
+    def image(self) -> bytes | None:
         with self._lock:
             return self._image
 
@@ -43,7 +42,7 @@ class SnapshotServer:
         server = self
 
         class Handler(http.server.BaseHTTPRequestHandler):
-            def do_GET(self) -> None:  # noqa: N802 (http.server API)
+            def do_GET(self) -> None:
                 image = server.image() if self.path.split("?", 1)[0] == server._path else None
                 if image is None:
                     self.send_error(404)

@@ -5,11 +5,11 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from prusa_orca import gcode_meta, preflight, printers  # noqa: E402
-from prusa_orca.backends.connect import parse_graphql_tools  # noqa: E402
-from prusa_orca.dialect import build_push_status  # noqa: E402
-from prusa_orca.model import PrinterTelemetry, RawPrinterState  # noqa: E402
-from prusa_orca.preset_sync import compare  # noqa: E402
+from prusa_orca import gcode_meta, preflight, printers
+from prusa_orca.backends.connect import parse_graphql_tools
+from prusa_orca.dialect import build_push_status
+from prusa_orca.model import PrinterTelemetry, RawPrinterState
+from prusa_orca.preset_sync import compare
 
 FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures")
 

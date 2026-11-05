@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import base64
 import time
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, ClassVar
 
 from ..host import LOG
 from ..views import CONTROL_COMMANDS, EXTRA_COMMANDS
@@ -12,7 +13,7 @@ from .base import TabHandler
 
 
 class StatusTab(TabHandler):
-    COMMANDS = {"poll": "poll", "refresh": "refresh", "snapshot": "snapshot", "job": "job", "control": "control"}
+    COMMANDS: ClassVar[Mapping[str, str]] = {"poll": "poll", "refresh": "refresh", "snapshot": "snapshot", "job": "job", "control": "control"}
 
     def poll(self, message: dict[str, Any]) -> None:
         self.page.push()

@@ -18,8 +18,9 @@ import itertools
 import logging
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Any
 
 LOG = logging.getLogger("prusa_orca")
 
@@ -56,7 +57,7 @@ class Task:
     error: str = ""
     finished: float = 0.0
     result: Any = None
-    on_done: Optional[Callable[["Task"], None]] = field(default=None, repr=False)
+    on_done: Callable[[Task], None] | None = field(default=None, repr=False)
     _done: threading.Event = field(default_factory=threading.Event, repr=False)
 
     @property
@@ -77,7 +78,7 @@ class TaskRunner:
         self._running: dict[int, Task] = {}
         self.recent: list[Task] = []  # finished, newest first
         self.listeners: list[Callable[[Task], None]] = []
-        self._watchdog: Optional[threading.Thread] = None
+        self._watchdog: threading.Thread | None = None
 
     def busy(self, resource: str) -> bool:
         with self._lock:
@@ -88,7 +89,7 @@ class TaskRunner:
             return sorted(self._running.values(), key=lambda t: t.id)
 
     def submit(self, label: str, fn: Callable[[], Any], kind: str = "query", resource: str = "",
-               on_done: Optional[Callable[[Task], None]] = None, timeout: Optional[float] = None,
+               on_done: Callable[[Task], None] | None = None, timeout: float | None = None,
                quiet: bool = False) -> Task:
         """Run fn on a worker thread. Raises TaskBusy when `resource` is already in use."""
         limit = TIMEOUTS.get(kind, 30.0) if timeout is None else timeout
@@ -113,7 +114,7 @@ class TaskRunner:
         self._ensure_watchdog()
         return task
 
-    def wait(self, task: Task, timeout: Optional[float] = None) -> Task:
+    def wait(self, task: Task, timeout: float | None = None) -> Task:
         task._done.wait(timeout)
         return task
 

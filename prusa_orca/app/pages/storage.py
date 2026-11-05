@@ -6,7 +6,8 @@ import base64
 import os
 import re
 import urllib.parse
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, ClassVar
 
 from ... import gcode_meta, preflight
 from ..host import LOG
@@ -14,7 +15,7 @@ from .base import TabHandler
 
 
 class StorageTab(TabHandler):
-    COMMANDS = {"list_files": "list_files", "thumbnail": "thumbnail", "print_file": "print_file"}
+    COMMANDS: ClassVar[Mapping[str, str]] = {"list_files": "list_files", "thumbnail": "thumbnail", "print_file": "print_file"}
 
     def list_files(self, message: dict[str, Any]) -> None:
         self.page.in_background(self._list_files, "Reading printer storage", resource="files")

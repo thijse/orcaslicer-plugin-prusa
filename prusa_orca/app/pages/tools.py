@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, ClassVar
 
 from ... import filament_sync
 from ...preset_sync import compare, preset_to_printer, printer_to_preset
@@ -16,7 +17,7 @@ def _selected(message: dict[str, Any]) -> set[int]:
 
 
 class ToolsTab(TabHandler):
-    COMMANDS = {"sync_nozzles": "sync_nozzles", "sync_filaments": "sync_filaments", "assign": "assign"}
+    COMMANDS: ClassVar[Mapping[str, str]] = {"sync_nozzles": "sync_nozzles", "sync_filaments": "sync_filaments", "assign": "assign"}
 
     def _has_tools(self) -> bool:
         snapshot = self.rt.snapshot
@@ -101,7 +102,9 @@ class ToolsTab(TabHandler):
             if not commands:
                 say("The printer already matches the preset.")
                 return
-            done = lambda errors: say("; ".join(errors) if errors else f"Sent {len(commands)} tool setting(s) to the printer.")
+            def done(errors: list[str]) -> None:
+                say("; ".join(errors) if errors else f"Sent {len(commands)} tool setting(s) to the printer.")
+
             if not rt.run_commands(commands, done, label="Changing tool settings", resource="sync-nozzles"):
                 say("Log in to Prusa Connect to change the printer's tool settings.")
 

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import os
 import urllib.parse
-from typing import Any, Optional
+from typing import Any
 
-from .host import orca
 from .. import filament_sync
 from ..materials import FilamentIdResolver, FilamentPreset
 from ..settings import Settings, default_data_dir
+from .host import orca
+
 
 def _configured_settings() -> Settings:
     try:
@@ -28,10 +29,10 @@ def _configured_hosts() -> list[str]:
     return hosts
 
 
-_RESOLVER: Optional[FilamentIdResolver] = None
+_RESOLVER: FilamentIdResolver | None = None
 
 
-def _id_resolver() -> Optional[FilamentIdResolver]:
+def _id_resolver() -> FilamentIdResolver | None:
     global _RESOLVER
     if _RESOLVER is None:
         # storage() is <data_dir>/orca_plugins/plugin_data/<key>; system profiles live in <data_dir>/system.
@@ -39,6 +40,14 @@ def _id_resolver() -> Optional[FilamentIdResolver]:
         data_dir = os.path.dirname(os.path.dirname(os.path.dirname(storage)))
         _RESOLVER = FilamentIdResolver(os.path.join(data_dir, "system"))
     return _RESOLVER
+
+
+def _first(preset: Any, key: str) -> str:
+    """First value of a preset option, as Orca's per-extruder options are lists or ';'-joined strings."""
+    value = preset.config_value(key)
+    if isinstance(value, (list, tuple)):
+        value = value[0] if value else ""
+    return str(value or "").split(";")[0].strip('"')
 
 
 def collect_filament_presets() -> list[FilamentPreset]:
@@ -51,16 +60,9 @@ def collect_filament_presets() -> list[FilamentPreset]:
         preset = filaments.find_preset(name)
         if preset is None or preset.is_default or not preset.is_visible:
             continue
-
-        def first(key: str) -> str:
-            value = preset.config_value(key)
-            if isinstance(value, (list, tuple)):
-                value = value[0] if value else ""
-            return str(value or "").split(";")[0].strip('"')
-
-        filament_id = first("filament_id") or (resolver.resolve(preset.file) if resolver and preset.file else "")
+        filament_id = _first(preset, "filament_id") or (resolver.resolve(preset.file) if resolver and preset.file else "")
         out.append(FilamentPreset(name=preset.name, filament_id=filament_id,
-                                  vendor=first("filament_vendor"), type=first("filament_type"),
+                                  vendor=_first(preset, "filament_vendor"), type=_first(preset, "filament_type"),
                                   compatible=bool(preset.is_compatible)))
     return out
 

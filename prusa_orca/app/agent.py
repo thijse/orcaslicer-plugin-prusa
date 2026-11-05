@@ -6,9 +6,8 @@ import json
 import os
 import shutil
 import tempfile
-from typing import Any, Optional
+from typing import Any
 
-from .host import LOG, orca
 from .. import gcode_meta, preflight
 from ..backends.prusalink import extract_plate_gcode, printer_file_name
 from ..control import gcode_to_commands
@@ -16,8 +15,20 @@ from ..dialect import build_get_version, build_push_status, limits, tool_mapping
 from ..history import new_record
 from ..model import PrinterTelemetry
 from ..tasks import TaskBusy
-from .host import (AGENT_ID, AGENT_NAME, ERR_BUSY, ERR_NOT_SUPPORTED, OK, STAGE_CREATE, STAGE_ERROR, STAGE_FINISHED,
-                   STAGE_UPLOAD, __version__)
+from .host import (
+    AGENT_ID,
+    AGENT_NAME,
+    ERR_BUSY,
+    ERR_NOT_SUPPORTED,
+    LOG,
+    OK,
+    STAGE_CREATE,
+    STAGE_ERROR,
+    STAGE_FINISHED,
+    STAGE_UPLOAD,
+    __version__,
+    orca,
+)
 from .notices import warn
 from .orca_state import _preset_names, _project_path, collect_filament_presets
 from .runtime import current_runtime, runtime
@@ -138,7 +149,7 @@ class PrusaPrinterAgent(pa.PrinterAgentBase):
         self._connected = False
         return OK
 
-    def _on_status(self, snapshot: Optional[PrinterTelemetry]) -> None:
+    def _on_status(self, snapshot: PrinterTelemetry | None) -> None:
         if snapshot is None:
             if self._connected:
                 self._connected = False

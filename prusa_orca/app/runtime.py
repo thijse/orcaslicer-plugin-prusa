@@ -2,27 +2,28 @@
 
 from __future__ import annotations
 
+import contextlib
+import logging
 import os
 import socket
 import threading
 import time
 import urllib.parse
-from typing import Any, Optional
+from typing import Any
 
-from .host import LOG, orca
-import logging
-
+from .. import printers
 from ..backends.aggregate import AggregateBackend
 from ..backends.connect import ConnectBackend, TokenStore
 from ..backends.prusalink import PrusaLinkBackend
 from ..backends.snapshot_server import SnapshotServer
-from .. import printers
 from ..history import PrintHistory, PrintTracker
 from ..materials import FilamentPreset, match_preset, pick_connect_material, tray_info_idx
 from ..model import PrinterTelemetry, ToolState
 from ..settings import Settings, default_data_dir
 from ..tasks import Task, TaskBusy, TaskRunner
+from .host import LOG, orca
 from .notices import command_label, notify
+
 
 class Runtime:
     """State shared by the agent and the tab: settings, backends, the poller and the last snapshot."""
@@ -31,16 +32,16 @@ class Runtime:
         self.settings = Settings(data_dir)
         self.tokens = TokenStore(self.settings.tokens_path)
         self.lock = threading.Lock()
-        self.backend: Optional[AggregateBackend] = None
+        self.backend: AggregateBackend | None = None
         self.presets: list[FilamentPreset] = []
         self.pending_verifier = ""
         self.listeners: list[Any] = []
         self._stop = threading.Event()
         self._wake = threading.Event()
-        self._thread: Optional[threading.Thread] = None
-        self._snapshots: Optional[SnapshotServer] = None
+        self._thread: threading.Thread | None = None
+        self._snapshots: SnapshotServer | None = None
         self._rtsp_check: tuple[str, float, bool] = ("", 0.0, False)
-        self._supported: Optional[dict[str, list[str]]] = None
+        self._supported: dict[str, list[str]] | None = None
         self._supported_retry = 0.0
         self.tasks = TaskRunner()
         self._attach_log_file(data_dir)
@@ -54,7 +55,7 @@ class Runtime:
         backend = self.backend
         return backend.identity_error if backend else ""
 
-    def _identify(self, snapshot: Optional[PrinterTelemetry]) -> None:
+    def _identify(self, snapshot: PrinterTelemetry | None) -> None:
         """Keep the printer model in the settings in step with what Connect reports (model, MMU, heads)."""
         if snapshot is None or not snapshot.printer_type or not snapshot.tools or self.identity_error:
             return
@@ -65,7 +66,7 @@ class Runtime:
             LOG.info("printer identified as %s (%s)", found["model_name"], found["model_id"])
             self.settings.update({"printer": found})
 
-    def _track(self, snapshot: Optional[PrinterTelemetry]) -> None:
+    def _track(self, snapshot: PrinterTelemetry | None) -> None:
         self._identify(snapshot)
         for event, record in self.tracker.update(snapshot):
             if record is not None:
@@ -117,7 +118,7 @@ class Runtime:
         self._wake.set()
 
     @property
-    def snapshot(self) -> Optional[PrinterTelemetry]:
+    def snapshot(self) -> PrinterTelemetry | None:
         backend = self.backend
         return backend.last_snapshot if backend else None
 
@@ -178,7 +179,7 @@ class Runtime:
         if self._snapshots is None:
             source = {"url": ""}
 
-            def fetch() -> Optional[bytes]:
+            def fetch() -> bytes | None:
                 current = self.backend.cloud if self.backend else None
                 if current is None:
                     return None
@@ -189,7 +190,7 @@ class Runtime:
             self._snapshots.start()
         return self._snapshots.url
 
-    def snapshot_image(self) -> Optional[bytes]:
+    def snapshot_image(self) -> bytes | None:
         return self._snapshots.image() if self.snapshot_url() and self._snapshots else None
 
     def supported_commands(self) -> dict[str, list[str]]:
@@ -208,14 +209,12 @@ class Runtime:
                 except Exception:
                     self._supported_retry = time.time() + 60
                     raise
-            try:
+            with contextlib.suppress(TaskBusy):
                 self.tasks.submit("Reading the printer's commands", fetch, kind="query", resource="supported-commands",
                                   quiet=True)
-            except TaskBusy:
-                pass
         return self._supported or {}
 
-    def run_commands(self, commands: list[tuple[str, dict[str, Any]]], on_done: Optional[Any] = None,
+    def run_commands(self, commands: list[tuple[str, dict[str, Any]]], on_done: Any | None = None,
                      label: str = "", resource: str = "") -> bool:
         """Send Connect commands in order as one task; False when Connect isn't set up.
 
@@ -278,7 +277,7 @@ class Runtime:
         return f"{(m.get('brand') or {}).get('name', '')} {m.get('name', '')}".strip()
 
 
-RUNTIME: Optional[Runtime] = None
+RUNTIME: Runtime | None = None
 
 
 def runtime() -> Runtime:
@@ -296,6 +295,6 @@ def runtime() -> Runtime:
 
 
 
-def current_runtime() -> Optional[Runtime]:
+def current_runtime() -> Runtime | None:
     """The runtime if something already started it."""
     return RUNTIME

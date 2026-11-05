@@ -4,15 +4,12 @@
   python tools/orca_ctl.py click <ref>
 """
 import json
-import os
 import sys
 import time
 
-sys.path.insert(0, os.path.join(os.environ.get("ORCASLICER_SRC", r"D:\Github\OrcaSlicer"), "tools", "mcp"))
-from orca_mcp import OrcaMcp  # noqa: E402
+from orca_client import connect
 
-info = json.load(open(os.path.join(os.environ["APPDATA"], "OrcaSlicer", "mcp", "server.json")))
-o = OrcaMcp(port=int(info["port"]), token=info["token"])
+o = connect()
 
 cmd = sys.argv[1]
 if cmd == "answer-all":

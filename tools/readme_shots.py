@@ -4,16 +4,13 @@ Usage: python tools/readme_shots.py OUT_DIR
 """
 
 import io
-import json
 import os
 import re
 import sys
 import time
 
+from orca_client import connect
 from PIL import Image
-
-sys.path.insert(0, os.path.join(os.environ.get("ORCASLICER_SRC", r"D:\Github\OrcaSlicer"), "tools", "mcp"))
-from orca_mcp import OrcaMcp  # noqa: E402
 
 MASK = r"""(function () {
   var rules = [[/\b\d{1,3}(\.\d{1,3}){3}\b/g, '192.168.1.50'], [/rtsp:\/\/[^\s"]+/g, 'rtsp://192.168.1.60/live'],
@@ -34,8 +31,7 @@ MASK = r"""(function () {
   return 1;
 })()"""
 
-info = json.load(open(os.path.join(os.environ["APPDATA"], "OrcaSlicer", "mcp", "server.json")))
-o = OrcaMcp(port=int(info["port"]), token=info["token"])
+o = connect()
 out = sys.argv[1]
 os.makedirs(out, exist_ok=True)
 ref = re.findall(r'\[(w\d+)\] webview = "about:blank', o.call_with_text("ui_snapshot")[1][0])[0]

@@ -7,7 +7,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from prusa_orca.backends.snapshot_server import SnapshotServer  # noqa: E402
+from prusa_orca.backends.snapshot_server import SnapshotServer
 
 
 class TestSnapshotServer(unittest.TestCase):

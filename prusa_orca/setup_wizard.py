@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from .printers import model_for
 
@@ -17,7 +17,7 @@ class Proposal:
     notes: list[str] = field(default_factory=list)  # optional follow-ups
 
 
-def _rtsp_camera(cameras: list[dict[str, Any]]) -> Optional[str]:
+def _rtsp_camera(cameras: list[dict[str, Any]]) -> str | None:
     """IP of a camera that can stream RTSP (the Buddy3D), from Connect's camera list."""
     for cam in cameras:
         config = cam.get("config") or {}

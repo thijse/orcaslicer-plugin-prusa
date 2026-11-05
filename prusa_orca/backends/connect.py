@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import hashlib
 import json
 import logging
@@ -13,12 +14,11 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Optional
+from typing import Any
 
-from .connect_graphql import (CAMERAS_BY_PRINTER, GRAPHQL_URL, PRINTER_FFF_TELEMETRY, UPDATE_PRINTER_MATERIAL,
-                              WAREHOUSE_MATERIALS)
 from ..model import JobState, PrinterTelemetry, RawPrinterState, ToolState
 from ..phase import interpret_phase
+from .connect_graphql import CAMERAS_BY_PRINTER, GRAPHQL_URL, PRINTER_FFF_TELEMETRY, UPDATE_PRINTER_MATERIAL, WAREHOUSE_MATERIALS
 
 LOG = logging.getLogger("prusa_orca.backends.connect")
 
@@ -99,10 +99,8 @@ class TokenStore:
         with self._lock:
             self.access_token = self.refresh_token = ""
             self.expires_at = 0.0
-            try:
+            with contextlib.suppress(OSError):
                 os.remove(self.path)
-            except OSError:
-                pass
 
     def _token_request(self, fields: dict[str, str]) -> None:
         body = urllib.parse.urlencode({"client_id": CLIENT_ID, **fields}).encode()
@@ -133,7 +131,7 @@ class TokenStore:
             return self.access_token
 
 
-def _rgba_to_hex(rgba: Optional[str]) -> str:
+def _rgba_to_hex(rgba: str | None) -> str:
     if not rgba or not rgba.startswith("#") or len(rgba) < 7:
         return ""
     return "#" + rgba[1:7].upper()
@@ -204,7 +202,7 @@ class ConnectBackend:
     simulate_delay = 0.0
     simulate_down = False
 
-    def _request(self, url: str, body: Optional[bytes] = None) -> Any:
+    def _request(self, url: str, body: bytes | None = None) -> Any:
         if self.simulate_delay:
             time.sleep(min(self.simulate_delay, self.timeout))
             if self.simulate_delay >= self.timeout:

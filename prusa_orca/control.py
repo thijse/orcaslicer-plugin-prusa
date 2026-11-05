@@ -6,7 +6,7 @@ Orca's Device tab sends Bambu-style G-code lines and JSON; these map them onto C
 from __future__ import annotations
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 # Printers don't report their limits; these are the XL/MK4/CORE One firmware caps (see printers.py).
 NOZZLE_MAX = 290
@@ -53,6 +53,6 @@ def gcode_to_commands(gcode: str, nozzle_max: int = NOZZLE_MAX, bed_max: int = B
     return commands
 
 
-def is_allowed(supported: dict[str, list[str]], command: str, state: Optional[str]) -> bool:
+def is_allowed(supported: dict[str, list[str]], command: str, state: str | None) -> bool:
     states = supported.get(command)
     return states is not None and (state is None or state.upper() in states)

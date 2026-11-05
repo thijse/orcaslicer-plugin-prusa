@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 import webbrowser
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, ClassVar
 
-from ...backends.connect import (ConnectAuthError, ConnectBackend, build_authorize_url, code_from_redirect,
-                                 generate_pkce_pair)
+from ...backends.connect import ConnectAuthError, ConnectBackend, build_authorize_url, code_from_redirect, generate_pkce_pair
 from ..notices import notify
 from .base import TabHandler
 
 
 class SettingsTab(TabHandler):
-    COMMANDS = {"save_settings": "save", "login_start": "login_start", "login_finish": "login_finish",
+    COMMANDS: ClassVar[Mapping[str, str]] = {"save_settings": "save", "login_start": "login_start", "login_finish": "login_finish",
                 "logout": "logout", "fill_from_connect": "fill_from_connect", "list_printers": "list_printers",
                 "choose_printer": "choose_printer", "test_notify": "test_notify"}
 

@@ -12,13 +12,17 @@ sys.path.insert(0, ROOT)
 
 from prusa_orca.backends.aggregate import merge
 from prusa_orca.backends.connect import build_authorize_url, code_from_redirect, generate_pkce_pair, parse_graphql_tools
-from prusa_orca.dialect import build_ams_units, build_get_version, build_push_status, map_ams_to_prusa_tool_mapping
-from prusa_orca.materials import (FilamentIdResolver, FilamentPreset, match_preset, pick_connect_material,
-                                  tray_info_idx)
+from prusa_orca.backends.prusalink import extract_plate_gcode, parse_status, printer_file_name
+from prusa_orca.dialect import (
+    build_ams_units,
+    build_get_version,
+    build_push_status,
+    map_ams_to_prusa_tool_mapping,
+    tool_mapping_problem,
+)
+from prusa_orca.materials import FilamentIdResolver, FilamentPreset, match_preset, pick_connect_material, tray_info_idx
 from prusa_orca.model import InterpretedPhase, JobState, PrinterTelemetry, RawPrinterState, ToolState
 from prusa_orca.phase import interpret_phase
-from prusa_orca.dialect import tool_mapping_problem
-from prusa_orca.backends.prusalink import extract_plate_gcode, parse_status, printer_file_name
 from prusa_orca.settings import Settings
 
 
@@ -106,13 +110,13 @@ class TestDialect(unittest.TestCase):
 
 
 class TestMaterials(unittest.TestCase):
-    PRESETS = [
+    PRESETS = (
         FilamentPreset("Generic PLA @Prusa XL", "GFL99", "Generic", "PLA"),
         FilamentPreset("Prusament PLA @Prusa XL", "PFL01", "Prusament", "PLA"),
         FilamentPreset("Prusament PLA Army Green @Prusa XL", "PFL07", "Prusament", "PLA"),
         FilamentPreset("Generic PETG @Prusa XL", "GFG99", "Generic", "PETG"),
         FilamentPreset("Generic PETG @Other", "GFG98", "Generic", "PETG", compatible=False),
-    ]
+    )
 
     def tool(self, **kw):
         return ToolState(index=0, tool_number=1, is_loaded=True, **kw)
@@ -156,14 +160,14 @@ class TestPrintJob(unittest.TestCase):
 
 
 class TestPickConnectMaterial(unittest.TestCase):
-    NODES = [
+    NODES = (
         {"uuid": "a", "material": {"name": "PLA Lightweight Army Green", "abbreviation": "PLA", "brand": {"name": "Prusament"},
                                     "primaryColor": {"colorRgba": "#524f2fff"}}},
         {"uuid": "b", "material": {"name": "PLA Army Green", "abbreviation": "PLA", "brand": {"name": "Prusament"},
                                     "primaryColor": {"colorRgba": "#524f2fff"}}},
         {"uuid": "c", "material": {"name": "PLA Army Green", "abbreviation": "PLA", "brand": {"name": "FormFutura"}}},
         {"uuid": "d", "material": {"name": "PETG Army Green", "abbreviation": "PETG", "brand": {"name": "Prusament"}}},
-    ]
+    )
 
     def test_prefers_type_vendor_and_fewest_extra_words(self):
         pick = pick_connect_material(self.NODES, "Prusament", "Prusament PLA Army Green", "PLA", "#524F2F")

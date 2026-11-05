@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from .printers import PrinterModel, is_prusa, same_model
 
 
@@ -20,7 +18,7 @@ def serial_mismatch(lan_serial: str, cloud_serial: str) -> str:
             f"{cloud_serial} in Connect). Controls are off until the host or the Connect printer in Settings is fixed.")
 
 
-def preset_mismatch(orca_printer_model: str, preset_name: str, model: Optional[PrinterModel]) -> str:
+def preset_mismatch(orca_printer_model: str, preset_name: str, model: PrinterModel | None) -> str:
     """Notice when Orca's selected printer preset is not for the connected printer; "" when it is or is unknown."""
     if model is None or not orca_printer_model:
         return ""

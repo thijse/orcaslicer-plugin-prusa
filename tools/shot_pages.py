@@ -5,19 +5,15 @@ Assumes the Prusa tab is open.
 """
 
 import io
-import json
 import os
 import re
 import sys
 import time
 
+from orca_client import connect
 from PIL import Image
 
-sys.path.insert(0, os.path.join(os.environ.get("ORCASLICER_SRC", r"D:\Github\OrcaSlicer"), "tools", "mcp"))
-from orca_mcp import OrcaMcp  # noqa: E402
-
-info = json.load(open(os.path.join(os.environ["APPDATA"], "OrcaSlicer", "mcp", "server.json")))
-o = OrcaMcp(port=int(info["port"]), token=info["token"])
+o = connect()
 out = sys.argv[1]
 pages = sys.argv[2:] or ["status", "settings"]
 os.makedirs(out, exist_ok=True)

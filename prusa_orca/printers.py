@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -53,7 +53,7 @@ _XL_BY_TOOLS = {5: "prusa_xl_5t_01"}
 _INDX_BY_TOOLS = {8: "prusa_coreone_indx_8t"}
 
 
-def model_for(printer_type: str) -> Optional[PrinterModel]:
+def model_for(printer_type: str) -> PrinterModel | None:
     return MODELS.get((printer_type or "").strip())
 
 

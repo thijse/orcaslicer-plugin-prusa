@@ -3,16 +3,12 @@
 Usage: python tools/page_eval.py "<script>"   (the webview is found in a fresh ui_snapshot)
 """
 
-import json
-import os
 import re
 import sys
 
-sys.path.insert(0, os.path.join(os.environ.get("ORCASLICER_SRC", r"D:\Github\OrcaSlicer"), "tools", "mcp"))
-from orca_mcp import OrcaMcp  # noqa: E402
+from orca_client import connect
 
-info = json.load(open(os.path.join(os.environ["APPDATA"], "OrcaSlicer", "mcp", "server.json")))
-o = OrcaMcp(port=int(info["port"]), token=info["token"])
+o = connect()
 snap = o.call_with_text("ui_snapshot")[1][0]
 refs = re.findall(r'\[(w\d+)\] webview = "about:blank', snap)
 if not refs:

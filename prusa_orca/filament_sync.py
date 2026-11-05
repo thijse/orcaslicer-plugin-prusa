@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from .materials import FilamentPreset, match_preset
 from .model import ToolState
@@ -26,7 +27,7 @@ def compare(tools: list[ToolState], presets: Iterable[FilamentPreset], slot_pres
     rows = []
     for tool in tools:
         i = tool.index
-        match: Optional[FilamentPreset] = match_preset(tool, presets)
+        match: FilamentPreset | None = match_preset(tool, presets)
         slot = None
         if i < len(slot_presets):
             slot = {"preset": slot_presets[i], "color": slot_colours[i] if i < len(slot_colours) else ""}
