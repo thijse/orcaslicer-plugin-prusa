@@ -27,6 +27,23 @@ jobs:
       - name: Format, lint, types, import contracts, tests
         run: uv run python scripts/check.py
 
+  wheel:
+    name: Plugin wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Build and check the wheel
+        run: uv run --no-sync python scripts/build_wheel.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prusa_plugin-wheel
+          path: dist/prusa_plugin.whl
+          if-no-files-found: error
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest

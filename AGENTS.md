@@ -11,7 +11,10 @@ uv sync                                  # dev tools from uv.lock
 uv run python scripts/check.py           # everything CI runs: format, lint, types, import contracts, tests
 uv run python scripts/check.py --fix     # apply Ruff formatting and safe fixes first
 uv run pytest tests/test_core.py -q      # one test file
+uv run python scripts/build_wheel.py     # build and check dist/prusa_plugin.whl
 ```
+
+The wheel must stay named `prusa_plugin.whl`: OrcaSlicer keys a local plugin by its file stem, and that key names the settings folder and is what presets store. The version is in three places that `build_wheel.py` checks against each other: `pyproject.toml`, the PEP 723 header in `prusa_plugin.py`, and `__version__` in `prusa_orca/app/host.py`.
 
 Run `scripts/check.py` before you report a change as done, and fix what it reports.
 

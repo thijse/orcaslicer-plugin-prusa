@@ -44,15 +44,19 @@ It follows Orca's light and dark themes.
 ## Install
 
 1. Use an OrcaSlicer build with Python plugin support, tested against 2.5RC . It needs the plugin API with the `printer_agent` and `pages` capabilities.
-2. Download this repository: **Code → Download ZIP**, or `git clone`.
-3. Put the folder in OrcaSlicer's plugin folder as `orca_plugins/prusa`. On Windows:
+2. Install the plugin in one of two ways:
+   - **As a package:** get `prusa_plugin.whl` (build it with `uv run python scripts/build_wheel.py`, or download the `prusa_plugin-wheel` artifact from a [CI run](https://github.com/thijse/orcaslicer-plugin-prusa/actions)). In OrcaSlicer, open **Plugins**, choose **Install plugin**, and pick the file. In the plugin list it shows as **orcaslicer-plugin-prusa**.
+   - **As a folder:** download this repository (**Code → Download ZIP**, or `git clone`) and continue with step 3.
+
+   Use one or the other: both install as the same plugin, with the same settings folder.
+3. Folder install only: put the folder in OrcaSlicer's plugin folder as `orca_plugins/prusa`. On Windows:
 
    ```powershell
    New-Item -ItemType Junction -Path "$env:APPDATA\OrcaSlicer\orca_plugins\prusa" -Target "C:\path\to\orcaslicer-plugin-prusa"
    ```
 
    On macOS the folder is `~/Library/Application Support/OrcaSlicer/orca_plugins/`; on Linux it is `~/.config/OrcaSlicer/orca_plugins/`.
-4. Restart OrcaSlicer and enable **Prusa Integration** in the plugin list. Allow the network access it asks for.
+4. Restart OrcaSlicer and enable **Prusa Integration** (or **orcaslicer-plugin-prusa** for the package) in the plugin list. Allow the network access it asks for.
 
 ## Set up your printer
 
@@ -107,6 +111,7 @@ Any help on making the plugin more robust and feature complete is very welcome. 
 - **OrcaSlicer's plugin system:** [Plugin System Overview](https://github.com/OrcaSlicer/OrcaSlicer/wiki/plugin_system), [Plugin Development](https://github.com/OrcaSlicer/OrcaSlicer/wiki/plugin_development), the [Printer Agent](https://github.com/OrcaSlicer/OrcaSlicer/wiki/printer_agent) and [Pages](https://github.com/OrcaSlicer/OrcaSlicer/wiki/pages) APIs, and the [Plugin Audit Hook](https://github.com/OrcaSlicer/OrcaSlicer/wiki/plugin_audit_hook) (permissions).
 - **Code layout:** [docs/architecture.md](docs/architecture.md). The core logic is plain Python with tests; only `prusa_orca/app` talks to Orca.
 - **Checks:** install [uv](https://docs.astral.sh/uv/), then `uv sync` and `uv run python scripts/check.py`. This runs Ruff, basedpyright, the layer contracts and pytest, the same as CI does on every push. Conventions for contributors and coding agents are in [AGENTS.md](AGENTS.md).
+- **Package:** `uv run python scripts/build_wheel.py` builds `dist/prusa_plugin.whl` and checks it against the rules OrcaSlicer applies to a plugin wheel. CI builds it on every push.
 - **Dev scripts:** the scripts in `tools/` drive a running OrcaSlicer through its MCP server. Set `ORCASLICER_SRC` to your OrcaSlicer source folder.
 
 ## License
