@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import logging
 import os
 import socket
 import threading
@@ -24,7 +23,7 @@ from ..materials import FilamentPreset, match_preset, pick_connect_material, tra
 from ..model import PrinterTelemetry, ToolState
 from ..settings import Settings, default_data_dir
 from ..tasks import Task, TaskBusy, TaskRunner
-from .host import LOG, orca
+from .host import LOG, LogFormatter, orca
 from .notices import command_label, notify
 
 
@@ -97,7 +96,7 @@ class Runtime:
             handler = RotatingFileHandler(
                 os.path.join(data_dir, "prusa_plugin.log"), maxBytes=1_000_000, backupCount=2, encoding="utf-8"
             )
-            handler.setFormatter(logging.Formatter("%(asctime)s %(threadName)s %(levelname)s %(message)s"))
+            handler.setFormatter(LogFormatter("%(asctime)s %(threadName)s %(levelname)s %(message)s"))
             LOG.addHandler(handler)
         except OSError:
             LOG.warning("could not open the plugin log file")

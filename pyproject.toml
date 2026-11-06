@@ -82,7 +82,7 @@ exhaustive = false
 name = "The core does not depend on the outer layers"
 type = "forbidden"
 source_modules = [
-    "prusa_orca.consistency", "prusa_orca.control", "prusa_orca.dialect", "prusa_orca.filament_sync",
+    "prusa_orca.catalog", "prusa_orca.consistency", "prusa_orca.control", "prusa_orca.dialect", "prusa_orca.filament_sync",
     "prusa_orca.gcode_meta", "prusa_orca.history", "prusa_orca.materials", "prusa_orca.model", "prusa_orca.phase",
     "prusa_orca.preflight", "prusa_orca.preset_sync", "prusa_orca.printers", "prusa_orca.settings",
     "prusa_orca.setup_wizard", "prusa_orca.tasks",

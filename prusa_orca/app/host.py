@@ -7,6 +7,7 @@ import importlib
 import logging
 import os
 import sys
+import traceback
 from typing import Any
 
 
@@ -45,9 +46,23 @@ ERR_BUSY = -1
 # SendingPrintJobStage (slic3r/Utils/bambu_networking.hpp)
 STAGE_CREATE, STAGE_UPLOAD, STAGE_FINISHED, STAGE_ERROR = 0, 1, 6, 7
 
+
+class LogFormatter(logging.Formatter):
+    """Tracebacks without source lines: reading a plugin file asks the user for permission in Orca."""
+
+    def formatException(self, ei: Any) -> str:
+        _, exc, tb = ei
+        lines = ["Traceback (most recent call last):\n"]
+        for frame, lineno in traceback.walk_tb(tb):
+            code = frame.f_code
+            lines.append(f'  File "{code.co_filename}", line {lineno}, in {code.co_name}\n')
+        lines += traceback.format_exception_only(type(exc), exc)
+        return "".join(lines).rstrip("\n")
+
+
 LOG = logging.getLogger("prusa_orca")
 if not LOG.handlers:
     _stderr = logging.StreamHandler(sys.stderr)
-    _stderr.setFormatter(logging.Formatter("%(asctime)s prusa_orca %(levelname)s %(message)s"))
+    _stderr.setFormatter(LogFormatter("%(asctime)s prusa_orca %(levelname)s %(message)s"))
     LOG.addHandler(_stderr)
 LOG.setLevel(logging.INFO)

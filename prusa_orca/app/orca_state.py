@@ -71,6 +71,38 @@ def collect_filament_presets() -> list[FilamentPreset]:
     return out
 
 
+def collect_base_presets() -> list[FilamentPreset]:
+    """UI thread only: system filament presets compatible with the printer, visible or not, as import bases."""
+    out: list[FilamentPreset] = []
+    filaments = orca.host.preset_bundle().filaments
+    for name in filaments.preset_names():
+        preset = filaments.find_preset(name)
+        if preset is None or preset.is_default or not preset.is_system or not preset.is_compatible:
+            continue
+        out.append(
+            FilamentPreset(name=preset.name, vendor=_first(preset, "filament_vendor"), type=_first(preset, "filament_type"))
+        )
+    return out
+
+
+def local_bundle_dir(bundle_id: str) -> str:
+    """UI thread only: <data_dir>/user/<preset folder>/_local/<bundle_id>, where Orca loads a local bundle from."""
+    data_dir = orca_data_dir(orca.host.plugin.storage())
+    return os.path.join(data_dir, "user", _active_preset_folder(data_dir), "_local", bundle_id)
+
+
+def _active_preset_folder(data_dir: str) -> str:
+    """The user preset folder in use: read from where a loaded user preset lives (OrcaSlicer.conf is off limits)."""
+    user_root = os.path.normcase(os.path.join(data_dir, "user")) + os.sep
+    filaments = orca.host.preset_bundle().filaments
+    for name in filaments.preset_names():
+        preset = filaments.find_preset(name)
+        path = os.path.normcase(str(getattr(preset, "file", "") or ""))
+        if preset is not None and preset.is_user() and path.startswith(user_root):
+            return path[len(user_root) :].split(os.sep, 1)[0]
+    return "default"
+
+
 def _project_path() -> str:
     try:
         return str(orca.host.plater().project_path() or "")

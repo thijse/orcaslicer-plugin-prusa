@@ -35,6 +35,8 @@ if orca is not None:
                 "https://connect.prusa3d.com",
                 "https://connect-api.prusa3d.com",
                 "https://camera-service-snapshots.prusa3d.com",
+                # The Open Filament Database dump for the filament catalogue.
+                "https://api.openfilamentdatabase.org",
                 # The local server that hands Connect camera snapshots to Orca's Device tab binds here.
                 "http://127.0.0.1",
             ]

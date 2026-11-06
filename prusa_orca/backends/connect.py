@@ -19,7 +19,14 @@ from typing import Any
 from ..jsonview import JsonObj, obj, objs
 from ..model import JobState, PrinterTelemetry, RawPrinterState, ToolState
 from ..phase import interpret_phase
-from .connect_graphql import CAMERAS_BY_PRINTER, GRAPHQL_URL, PRINTER_FFF_TELEMETRY, UPDATE_PRINTER_MATERIAL, WAREHOUSE_MATERIALS
+from .connect_graphql import (
+    CAMERAS_BY_PRINTER,
+    CATALOG_MATERIALS,
+    GRAPHQL_URL,
+    PRINTER_FFF_TELEMETRY,
+    UPDATE_PRINTER_MATERIAL,
+    WAREHOUSE_MATERIALS,
+)
 
 LOG = logging.getLogger("prusa_orca.backends.connect")
 
@@ -290,6 +297,11 @@ class ConnectBackend:
         if material_type:
             variables["materialType"] = [material_type]
         data = self._graphql("WarehouseMaterials", WAREHOUSE_MATERIALS, variables)
+        return objs(data, "data", "warehouse", "materials", "nodes")
+
+    def catalog_materials(self, text: str, first: int = 60) -> list[dict[str, Any]]:
+        """Filament entries matching `text`, with their print properties."""
+        data = self._graphql("CatalogMaterials", CATALOG_MATERIALS, {"first": first, "search": text})
         return objs(data, "data", "warehouse", "materials", "nodes")
 
     def assign_material(self, tool_id: str, item: dict[str, Any]) -> None:

@@ -71,6 +71,25 @@ query WarehouseMaterials($organizationId: String!, $first: Int, $materialType: [
 }
 """
 
+# The material catalogue, with the print properties Connect has (about half the entries).
+CATALOG_MATERIALS = """
+query CatalogMaterials($organizationId: String!, $first: Int, $after: String, $search: String) {
+  warehouse {
+    materials(organizationId: $organizationId, first: $first, after: $after, search: $search, materialClass: [FFF]) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        material {
+          uuid name type class abbreviation tags url
+          brand { name }
+          primaryColor { colorRgba }
+          properties { density chamberTemperature minPrintTemperature maxPrintTemperature minBedTemperature maxBedTemperature }
+        }
+      }
+    }
+  }
+}
+"""
+
 # Records a material on a tool, like Tools > Assign; it does not load or move filament.
 UPDATE_PRINTER_MATERIAL = """
 mutation UpdatePrinterMaterial($organizationId: UUID!, $printerId: UUID!, $printer: PrinterUpdateInput!) {

@@ -118,6 +118,15 @@ PAGES_HTML = r"""<!DOCTYPE html>
   .tools.assign select { margin-top: auto !important; }
   .msg { color: var(--mu); min-height: 1em; padding: 0 12px 10px; }
   table { width: 100%; border-collapse: collapse; }
+  .cat-bar { display: flex; gap: 8px; align-items: center; }
+  .cat-bar input { flex: 1; } .cat-bar select { width: 140px; }
+  #cat-notice { display: none; margin-top: 8px; padding: 6px 10px; border: 1px solid var(--warn); border-radius: 6px; color: var(--warn); background: var(--warn-bg); }
+  #cat-list { max-height: 420px; overflow: auto; margin-top: 8px; }
+  #cat-list .brand { font-weight: 600; padding: 8px 0 4px; border-bottom: 1px solid var(--bd); }
+  #cat-list .row { display: flex; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--bd); }
+  #cat-list .row .nm { flex: 1; min-width: 0; }
+  #cat-list .row small { color: var(--mu); margin-left: 8px; }
+  #cat-list .row button { padding: 2px 8px; }
   td, th { text-align: left; padding: 4px 10px; border-bottom: 1px solid var(--bd); vertical-align: middle; height: 34px; }
   th { color: inherit; font-weight: 600; font-size: 12px; height: auto; padding: 8px 10px; }
   tbody tr { cursor: pointer; }
@@ -319,6 +328,14 @@ PAGES_HTML = r"""<!DOCTYPE html>
         <div style="color:var(--mu); margin-top:8px">Tool N is filament slot N in the Prepare tab. Printer → Orca picks the matching filament preset for each selected slot and sets the slot colour to the spool colour. Orca → printer records each selected slot's filament and colour on the tool in Prusa Connect (a label only; nothing is loaded).</div>
       </div>
     </div>
+    <div class="box"><h4>Find a filament</h4><div class="pad">
+      <div class="cat-bar"><input type="text" id="cat-q" placeholder="Brand, name or colour, e.g. eSUN PLA+ yellow">
+        <select id="cat-type"><option value="">All materials</option><option>PLA</option><option>PETG</option><option>ASA</option><option>ABS</option><option>PC</option><option>PA</option><option>TPU</option><option>PVB</option></select>
+        <button id="b-cat" class="primary">Search</button></div>
+      <div id="cat-notice"></div>
+      <div id="cat-list"></div>
+      <div style="color:var(--mu); margin-top:8px">From Prusa Connect and the Open Filament Database. <b>T1, T2…</b> imports the filament and uses it for that tool when slicing; <b>Import</b> only adds it to Orca's filament list. Settings come from the closest Orca profile for this printer, with the maker's temperatures where known.</div>
+    </div></div>
   </section>
 
   <section class="page" id="p-history">
@@ -491,6 +508,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
       (d.tools || []).forEach(function (t) { box.appendChild(toolCard(t, false)); box2.appendChild(toolCard(t, d.logged_in)); });
     }
     applyAllowed(d);
+    toolCount = (d.tools || []).length;
     renderReady(d.ready);
     renderTasks(d.tasks);
     var cw = $('cloud-warn');
@@ -557,6 +575,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
     if (!m) return;
     if (m.type === 'telemetry') render(m.data);
     if (m.type === 'settings') renderSettings(m.data);
+    if (m.type === 'catalog') renderCatalog(m);
     if (m.type === 'about') { $('ab-version').textContent = m.data.version; $('ab-kind').textContent = m.data.kind; $('ab-location').textContent = m.data.location; }
     if (m.type === 'wizard') onWizard(m);
     if (m.type === 'message') { $('msg').textContent = m.text; toast(m.text); if ($('wiz').classList.contains('on')) $('w-next').disabled = false; }
@@ -771,10 +790,42 @@ PAGES_HTML = r"""<!DOCTYPE html>
     s.appendChild(i); s.appendChild(document.createTextNode(label)); return s;
   }
 
+  // Filament catalogue (Filament page).
+  var toolCount = 0;
+  function catSearch() { post({ command: 'catalog_search', query: $('cat-q').value.trim(), material: $('cat-type').value }); }
+  $('b-cat').onclick = catSearch;
+  $('cat-q').onkeydown = function (e) { if (e.key === 'Enter') catSearch(); };
+  function renderCatalog(m) {
+    var n = $('cat-notice'); n.textContent = m.notice || ''; n.style.display = m.notice ? 'block' : 'none';
+    var list = $('cat-list'); list.textContent = '';
+    if (!m.results.length) {
+      var e = document.createElement('div'); e.style.color = 'var(--mu)'; e.style.padding = '8px 0';
+      e.textContent = m.query ? 'Nothing found for "' + m.query + '".' : 'Type a brand, name or colour and press Search.';
+      list.appendChild(e); return;
+    }
+    var brand = null;
+    m.results.forEach(function (r) {
+      if (r.brand_key !== brand) { brand = r.brand_key; var h = document.createElement('div'); h.className = 'brand'; h.textContent = brand || 'Unknown brand'; list.appendChild(h); }
+      var row = document.createElement('div'); row.className = 'row';
+      var nm = document.createElement('span'); nm.className = 'nm'; nm.appendChild(swatch(r.color, r.name));
+      var info = document.createElement('small'); info.textContent = r.type + (r.has_data ? '' : ' · no print data') + (r.source === 'ofd' ? ' · Open Filament DB' : ''); nm.appendChild(info);
+      row.appendChild(nm);
+      for (var i = 1; i <= toolCount; i++) row.appendChild(catButton('T' + i, r.key, i, 'Import and use for tool T' + i + ' when slicing'));
+      row.appendChild(catButton('Import', r.key, 0, 'Add to Orca\'s filament list'));
+      list.appendChild(row);
+    });
+  }
+  function catButton(label, key, slot, title) {
+    var b = document.createElement('button'); b.textContent = label; b.title = title;
+    b.onclick = function () { post({ command: 'catalog_import', key: key, slot: slot }); };
+    return b;
+  }
+
   // Controls locked while a task holds their resource (see prusa_orca/tasks.py).
   var LOCKS = {
     job: ['b-pause', 'b-resume', 'b-stop', 'b-print', 'hd-reprint'],
     'sync-nozzles': ['b-nz-preset', 'b-nz-printer'], 'sync-filaments': ['b-fs-orca', 'b-fs-printer'],
+    catalog: ['b-cat'], 'catalog-import': ['#cat-list'],
     files: ['b-files'], 'list-printers': ['b-printers'], login: ['b-code', 'b-login'], fill: ['b-fill'],
     MOVE: ['#jog'], MOVE_Z: ['#jog'], HOME: ['#jog'], DISABLE_STEPPERS: ['b-motors'],
     SET_NOZZLE_TEMPERATURE: ['.set[data-cmd=SET_NOZZLE_TEMPERATURE]'], SET_HEATBED_TEMPERATURE: ['.set[data-cmd=SET_HEATBED_TEMPERATURE]'],
