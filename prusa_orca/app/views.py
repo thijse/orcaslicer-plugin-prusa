@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..control import is_allowed
+from ..control import is_allowed, ready_action
 from ..materials import FilamentPreset, match_preset
 from ..model import ToolState
 from .runtime import Runtime
@@ -103,6 +103,7 @@ def telemetry_view(rt: Runtime) -> dict[str, Any]:
     else:
         note = "Moves while printing are blocked by the printer." if t.is_printing else ""
     base = {**base, "allowed": allowed, "control_note": note, "extras": extra_controls(rt, t.raw_state.value)}
+    base["ready"] = ready_action(supported, t.raw_state.value) if t.connected else None
     base["tasks"] = [task.view() for task in rt.tasks.running() if not task.quiet]
     base["cloud_error"] = backend.last_error if backend else ""
     base["identity_error"] = rt.identity_error

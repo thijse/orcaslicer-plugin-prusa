@@ -75,6 +75,13 @@ class TestMerge(unittest.TestCase):
         self.assertAlmostEqual(merged.bed_temperature, 20.6)
         self.assertEqual(merged.source, "lan+connect")
 
+    def test_ready_comes_from_connect(self):
+        lan = parse_status(fixture("lan_status_idle.json"))
+        self.assertEqual(lan.raw_state, RawPrinterState.IDLE)
+        merged = merge(lan, PrinterTelemetry(connected=True, raw_state=RawPrinterState.READY))
+        assert merged is not None
+        self.assertEqual(merged.raw_state, RawPrinterState.READY)
+
     def test_either_side_missing(self):
         lan = parse_status(fixture("lan_status_idle.json"))
         self.assertIs(merge(lan, None), lan)
@@ -293,6 +300,24 @@ class TestControl(unittest.TestCase):
         self.assertEqual(gcode_to_commands("G91 \nG1 X10.0 F3000\nG90 \n"), [("MOVE", {"feedrate": 3000, "x": 10.0})])
         self.assertEqual(gcode_to_commands("G91 \nG1 Z-1.0 F900\nG90 \n"), [("MOVE_Z", {"feedrate": 600, "distance": -1.0})])
         self.assertEqual(gcode_to_commands("G1 X10\nM106 P1 S255\n"), [])
+
+    def test_ready_action_follows_supported_states(self):
+        from prusa_orca.control import ready_action
+
+        supported = {"SET_PRINTER_READY": ["STOPPED", "IDLE", "FINISHED", "READY"], "CANCEL_PRINTER_READY": ["READY"]}
+        self.assertEqual(ready_action(supported, "IDLE"), {"name": "SET_PRINTER_READY", "label": "Set ready"})
+        self.assertEqual(ready_action(supported, "READY"), {"name": "CANCEL_PRINTER_READY", "label": "Cancel ready"})
+        self.assertIsNone(ready_action(supported, "PRINTING"))
+        self.assertIsNone(ready_action({}, "IDLE"))
+
+    def test_camera_hint_explains_a_stale_or_missing_picture(self):
+        from prusa_orca.control import camera_hint
+
+        self.assertEqual(camera_hint(True, 20, "", True), "")
+        self.assertIn("3 min", camera_hint(True, 180, "", True))
+        self.assertIn("Log in", camera_hint(False, None, "", False))
+        self.assertIn("Restart OrcaSlicer", camera_hint(False, None, 'audited operation "socket.bind" without permission', True))
+        self.assertEqual(camera_hint(False, None, "", True), "")
 
     def test_push_status_reports_homed_axes_and_temperature_limits(self):
         p = build_push_status(PrinterTelemetry(connected=True), 1)["print"]

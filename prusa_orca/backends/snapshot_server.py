@@ -10,6 +10,7 @@ import http.server
 import logging
 import secrets
 import threading
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -21,6 +22,9 @@ class SnapshotServer:
         self._fetch = fetch
         self._interval = interval
         self._image: bytes | None = None
+        # When the picture last changed (Connect may keep serving the same one) and why the last fetch failed.
+        self.changed_at = 0.0
+        self.last_error = ""
         self._lock = threading.Lock()
         self._stop = threading.Event()
         # An unguessable path: other local programs can't read the camera by guessing the port.
@@ -77,7 +81,11 @@ class SnapshotServer:
                 image = self._fetch()
                 if image:
                     with self._lock:
+                        if image != self._image:
+                            self.changed_at = time.time()
                         self._image = image
+                self.last_error = "" if image else "Prusa Connect has no picture from the camera"
             except Exception as exc:
+                self.last_error = str(exc)
                 LOG.debug("snapshot fetch failed: %s", exc)
             self._stop.wait(self._interval)

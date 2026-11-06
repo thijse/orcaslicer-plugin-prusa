@@ -7,7 +7,7 @@ import threading
 import time
 
 from ..consistency import serial_mismatch
-from ..model import PrinterTelemetry, ToolState
+from ..model import PrinterTelemetry, RawPrinterState, ToolState
 from ..phase import interpret_phase
 from ..tasks import reason as _reason
 from .connect import ConnectBackend
@@ -33,6 +33,9 @@ def merge(
     lan.uuid = cloud.uuid
     lan.serial_number = cloud.serial_number
     lan.hostname = cloud.hostname or lan.hostname
+    # PrusaLink keeps reporting IDLE after "Set ready"; only Connect knows the printer is READY.
+    if lan.raw_state == RawPrinterState.IDLE and cloud.raw_state == RawPrinterState.READY:
+        lan.raw_state = RawPrinterState.READY
     # With no tool picked the XL's LAN API reports 0 for the nozzle; show the first tool instead.
     if not lan.nozzle_temperature and lan.tools:
         tool = next((t for t in lan.tools if t.is_active), lan.tools[0])

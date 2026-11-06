@@ -34,6 +34,9 @@ PAGES_HTML = r"""<!DOCTYPE html>
   nav button.tab.on { border-left-color: var(--acc); background: var(--panel); font-weight: 600; }
   nav svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; }
   nav .foot { margin-top: auto; padding: 10px 16px; color: var(--mu); font-size: 11px; }
+  nav .ready { margin: 14px 16px 0; padding-top: 12px; border-top: 1px solid var(--bd); display: none; }
+  nav .ready small { display: block; color: var(--mu); margin-bottom: 6px; }
+  nav .ready button { width: 100%; }
   main { flex: 1; overflow: auto; }
   .page { display: none; padding: 12px; gap: 12px; min-height: 100%; }
   .page.on { display: flex; }
@@ -74,6 +77,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
   .cam .empty { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .cam .empty svg { width: 48px; height: 48px; fill: none; stroke: #777; stroke-width: 1.5; }
   .cam .tag { position: absolute; left: 8px; bottom: 6px; font-size: 11px; color: #ddd; background: rgba(0,0,0,.5); padding: 1px 6px; border-radius: 3px; }
+  .cam .hint { position: absolute; left: 8px; right: 8px; top: 8px; display: none; padding: 6px 10px; border-radius: 4px; color: #fff; background: rgba(161,92,0,.85); font-size: 12px; }
   .job { display: flex; gap: 14px; align-items: center; }
   .thumb { width: 96px; height: 96px; flex: none; border: 1px solid var(--bd); border-radius: 4px; background: var(--panel) center/contain no-repeat;
            display: flex; align-items: center; justify-content: center; }
@@ -212,6 +216,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
   <button class="tab" data-page="filament"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg>Filament</button>
   <button class="tab" data-page="history"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg>History</button>
   <button class="tab" data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Settings</button>
+  <div class="ready" id="ready"><small id="ready-note"></small><button id="b-ready"></button></div>
   <div class="foot" id="foot">-</div>
 </nav>
 <main>
@@ -224,7 +229,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
         <h4>Camera <small id="cam-age"></small></h4>
         <div class="cam"><img id="cam" alt="">
           <div class="empty" id="cam-empty"><svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/></svg>Waiting for the camera…</div>
-          <span class="tag" id="cam-tag" style="display:none"></span></div>
+          <span class="tag" id="cam-tag" style="display:none"></span><div class="hint" id="cam-hint"></div></div>
       </div>
       <div class="box">
         <h4>Printing progress</h4>
@@ -486,6 +491,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
       (d.tools || []).forEach(function (t) { box.appendChild(toolCard(t, false)); box2.appendChild(toolCard(t, d.logged_in)); });
     }
     applyAllowed(d);
+    renderReady(d.ready);
     renderTasks(d.tasks);
     var cw = $('cloud-warn');
     cw.style.display = d.cloud_error ? 'block' : 'none';
@@ -571,8 +577,11 @@ PAGES_HTML = r"""<!DOCTYPE html>
       nextThumb();
     }
     if (m.type === 'snapshot') {
-      $('cam').src = m.data; show('cam-empty', false);
-      $('cam-tag').textContent = 'Snapshot ' + (m.taken || ''); show('cam-tag', true);
+      if (m.data) {
+        $('cam').src = m.data; show('cam-empty', false);
+        $('cam-tag').textContent = m.changed ? 'Picture from ' + m.changed : 'Snapshot'; show('cam-tag', true);
+      }
+      $('cam-hint').textContent = m.hint || ''; $('cam-hint').style.display = m.hint ? 'block' : 'none';
     }
     if (m.type === 'printers') {
       var s = $('printers'); s.textContent = '';
@@ -668,6 +677,21 @@ PAGES_HTML = r"""<!DOCTYPE html>
       wizShow('test');
       post({ command: 'wizard_apply', patch: patch, password: pw });
     } else if (wiz.step === 'test') { wizClose(); }
+  };
+  var ready = null;
+  function renderReady(r) {
+    ready = r || null;
+    $('ready').style.display = ready ? 'block' : 'none';
+    if (!ready) return;
+    $('b-ready').textContent = ready.label;
+    $('ready-note').textContent = ready.name === 'SET_PRINTER_READY' ? 'Bed clear? Let Prusa Connect start the next queued print.' : 'Ready: Prusa Connect may start the next queued print.';
+  }
+  $('b-ready').onclick = function () {
+    if (!ready) return;
+    var q = ready.name === 'SET_PRINTER_READY'
+      ? 'Set the printer ready?\n\nOnly do this when the bed is clear: Prusa Connect may then start the next print in its queue.'
+      : 'Cancel ready?\n\nPrusa Connect will no longer start queued prints until the printer is set ready again.';
+    if (confirm(q)) post({ command: 'control', name: ready.name, kwargs: {} });
   };
   function applyAllowed(d) {
     allowed = d.allowed || {};

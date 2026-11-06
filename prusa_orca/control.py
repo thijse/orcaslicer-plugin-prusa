@@ -56,3 +56,36 @@ def gcode_to_commands(gcode: str, nozzle_max: int = NOZZLE_MAX, bed_max: int = B
 def is_allowed(supported: dict[str, list[str]], command: str, state: str | None) -> bool:
     states = supported.get(command)
     return states is not None and (state is None or state.upper() in states)
+
+
+# The bed is cleared and a print queued in Prusa Connect may start ("Set ready" in Connect).
+# Cancel first: Connect also lists READY for SET_PRINTER_READY.
+READY_COMMANDS = {"CANCEL_PRINTER_READY": "Cancel ready", "SET_PRINTER_READY": "Set ready"}
+
+
+def ready_action(supported: dict[str, list[str]], state: str | None) -> dict[str, str] | None:
+    """The ready command the printer accepts in this state, with its button label, or None."""
+    for name, label in READY_COMMANDS.items():
+        if is_allowed(supported, name, state):
+            return {"name": name, "label": label}
+    return None
+
+
+# Buddy3D cameras take a snapshot every 10-60 s; well past that the picture is stale.
+STALE_CAMERA_SECONDS = 120
+
+
+def camera_hint(has_image: bool, age: float | None, error: str, logged_in: bool) -> str:
+    """Why the camera picture isn't updating, or "" when it is."""
+    if not logged_in:
+        return "Log in to Prusa Connect (Settings) to see the camera."
+    if error and "permission" in error.lower():
+        return "OrcaSlicer blocked the camera. Restart OrcaSlicer and allow the plugin's permissions."
+    if error:
+        return f"No new picture: {error}."
+    if not has_image:
+        return ""
+    if age is not None and age > STALE_CAMERA_SECONDS:
+        minutes = round(age / 60)
+        return f"No new picture for {minutes} min. Check that the camera is online in Prusa Connect."
+    return ""

@@ -28,6 +28,8 @@ COMMAND_LABELS = {
     "MOVE_E": "Moving filament",
     "HOME": "Homing",
     "DISABLE_STEPPERS": "Turning motors off",
+    "SET_PRINTER_READY": "Setting the printer ready",
+    "CANCEL_PRINTER_READY": "Cancelling ready",
     "SET_TOOL_NOZZLE_DIAMETER": "Changing tool settings",
     "SET_TOOL_HARDENED": "Changing tool settings",
 }

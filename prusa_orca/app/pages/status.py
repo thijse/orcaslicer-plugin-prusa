@@ -7,6 +7,7 @@ import time
 from collections.abc import Mapping
 from typing import Any, ClassVar
 
+from ...control import READY_COMMANDS, camera_hint
 from ...jsonview import obj
 from ..host import LOG
 from ..views import CONTROL_COMMANDS, EXTRA_COMMANDS
@@ -34,15 +35,21 @@ class StatusTab(TabHandler):
 
     def _snapshot(self) -> None:
         # Shares the cache the Device tab's camera reads, refreshed in the background.
-        image = self.rt.snapshot_image()
+        try:
+            image = self.rt.snapshot_image()
+        except Exception as exc:
+            hint = camera_hint(False, None, str(exc), self.rt.tokens.logged_in)
+            self.page.post_message({"type": "snapshot", "hint": hint})
+            raise
+        changed_at, error = self.rt.snapshot_status()
+        message: dict[str, Any] = {"type": "snapshot"}
+        if changed_at:
+            message["changed"] = time.strftime("%H:%M:%S", time.localtime(changed_at))
+            message["age"] = round(time.time() - changed_at)
         if image:
-            self.page.post_message(
-                {
-                    "type": "snapshot",
-                    "taken": time.strftime("%H:%M:%S"),
-                    "data": "data:image/jpeg;base64," + base64.b64encode(image).decode("ascii"),
-                }
-            )
+            message["data"] = "data:image/jpeg;base64," + base64.b64encode(image).decode("ascii")
+        message["hint"] = camera_hint(bool(image), message.get("age"), error, self.rt.tokens.logged_in)
+        self.page.post_message(message)
 
     def job(self, message: dict[str, Any]) -> None:
         action = str(message.get("action") or "")
@@ -60,7 +67,7 @@ class StatusTab(TabHandler):
 
     def control(self, message: dict[str, Any]) -> None:
         name = str(message.get("name") or "")
-        if name not in CONTROL_COMMANDS and name not in EXTRA_COMMANDS:
+        if name not in CONTROL_COMMANDS and name not in EXTRA_COMMANDS and name not in READY_COMMANDS:
             return
         kwargs = obj(message, "kwargs")
         say = self.page.say

@@ -195,6 +195,11 @@ class Runtime:
     def snapshot_image(self) -> bytes | None:
         return self._snapshots.image() if self.snapshot_url() and self._snapshots else None
 
+    def snapshot_status(self) -> tuple[float, str]:
+        """When the camera picture last changed (0 if never) and the last fetch error."""
+        server = self._snapshots
+        return (server.changed_at, server.last_error) if server else (0.0, "")
+
     def supported_commands(self) -> dict[str, list[str]]:
         """Connect commands this printer accepts; {} until the background fetch has answered.
 
