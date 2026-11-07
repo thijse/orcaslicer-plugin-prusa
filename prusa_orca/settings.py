@@ -20,6 +20,8 @@ DEFAULTS: dict[str, Any] = {
     "printer": {"name": "Prusa XL", "model_id": "prusa_xl_5t_01"},
     "camera": {"rtsp_url": ""},
     "poll": {"status_seconds": 3.0, "tools_seconds": 30.0},
+    # Off: a new load on the printer is offered for slicing. On: the slicer's slot follows it (see filament_watch).
+    "filament": {"follow_printer": False},
     # Orca notifications per print event; see EVENT_TEXT in prusa_plugin.py.
     "notify": {
         "started": True,

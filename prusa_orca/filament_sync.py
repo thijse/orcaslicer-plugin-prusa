@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any, cast
 
+from .material_swap import printer_type, type_change
 from .materials import FilamentPreset, match_preset
 from .model import ToolState
 
@@ -56,6 +57,9 @@ def compare(
                 "slot": slot,
                 "preset_differs": preset_differs,
                 "color_differs": bool(slot and color and _hex(slot["color"]) != color),
+                # The Orca slot slices another material type than the printer has loaded.
+                "type_differs": bool(loaded and slot_type and type_change(tool.material, slot_type)),
+                "slot_type": printer_type(slot_type),
             }
         )
     return rows

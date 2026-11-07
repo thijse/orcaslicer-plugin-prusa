@@ -12,10 +12,7 @@ from .runtime import Runtime
 
 def tool_view(tool: ToolState, presets: list[FilamentPreset]) -> dict[str, Any]:
     preset = match_preset(tool, presets)
-    material = (tool.material or "").upper()
-    choices = sorted(p.name for p in presets if p.compatible and (p.type or "").upper() == material)
     return {
-        "choices": choices,
         "tool_number": tool.tool_number,
         "label": tool.label,
         "material": tool.material,
@@ -25,6 +22,8 @@ def tool_view(tool: ToolState, presets: list[FilamentPreset]) -> dict[str, Any]:
         "is_loaded": tool.is_loaded,
         "is_active": tool.is_active,
         "nozzle_diameter": tool.nozzle_diameter,
+        "hardened": tool.hardened,
+        "high_flow": tool.high_flow,
         "temperature": tool.temperature,
         "target": tool.target_temperature,
         "preset": preset.name if preset else "",
@@ -36,6 +35,7 @@ CONTROL_COMMANDS = (
     "SET_NOZZLE_TEMPERATURE",
     "SET_HEATBED_TEMPERATURE",
     "SET_SPEED",
+    "SET_FLOW",
     "MOVE",
     "MOVE_Z",
     "HOME",
@@ -43,7 +43,6 @@ CONTROL_COMMANDS = (
 )
 # Extra settings the printer may offer (CORE One chamber, XL enclosure, flow), shown when supported-commands lists them.
 EXTRA_COMMANDS = {
-    "SET_FLOW": "Flow (%)",
     "SET_CHAMBER_TEMPERATURE": "Chamber temperature (°C)",
     "SET_CHAMBER_FAN": "Chamber fan (%)",
     "SET_ENCLOSURE_ENABLED": "Enclosure",
@@ -122,6 +121,7 @@ def telemetry_view(rt: Runtime) -> dict[str, Any]:
         "progress": round(t.job.progress_percent, 1),
         "z": t.axis_z,
         "speed": t.speed_percent,
+        "flow": t.flow_percent,
         "fan_print": t.fan_print_rpm,
         "fan_hotend": t.fan_hotend_rpm,
         "state": t.raw_state.value,
@@ -135,5 +135,8 @@ def telemetry_view(rt: Runtime) -> dict[str, Any]:
         }
         if t.job.job_id is not None
         else None,
-        "tools": [tool_view(tool, rt.presets) for tool in t.tools],
+        "tools": [
+            {**tool_view(tool, rt.presets), "swap": s.to_json() if (s := rt.swaps.get(tool.tool_number)) else None}
+            for tool in t.tools
+        ],
     }

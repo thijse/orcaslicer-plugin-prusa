@@ -12,9 +12,11 @@ from ..preset_sync import compare
 from ..printers import model_for
 from ..tasks import Task, TaskBusy
 from ..ui.page_html import PAGES_HTML
+from .filament_watch import FilamentWatch
 from .host import LOG, PAGE_NAME, install_info, orca
 from .orca_state import collect_filament_presets, filament_slots, printer_preset_model, printer_preset_nozzles
 from .pages import TABS
+from .pages.catalog import recent
 from .runtime import runtime
 from .views import telemetry_view
 
@@ -30,6 +32,11 @@ class PrusaPage(orca.pages.PagesPluginCapabilityBase):
         for tab in TABS:
             self._routes.update(tab(self).handlers())
         self._routes["init"] = self._init
+        self._watch = FilamentWatch(runtime(), self._open_finder)
+
+    def _open_finder(self, tool: int) -> None:
+        # The plugin API can't switch tabs; the dialog is open when the user opens the Prusa tab.
+        self.post_message({"type": "open_finder", "tool": tool})
 
     def get_name(self) -> str:
         return PAGE_NAME
@@ -54,6 +61,8 @@ class PrusaPage(orca.pages.PagesPluginCapabilityBase):
                 view["nozzles"] = {"preset": name, "rows": compare(rt.snapshot.tools, diameters, types)}
                 slots, colours = filament_slots()
                 view["filaments"] = filament_sync.compare(rt.snapshot.tools, rt.presets, slots, colours)
+                recent(rt.settings.data_dir).note_slots(slots, rt.presets)
+                self._watch.check(rt.snapshot.tools, slots)
             except Exception:
                 LOG.exception("could not read the printer preset")
         if rt.snapshot is not None and not rt.identity_error:

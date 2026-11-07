@@ -18,7 +18,10 @@ PAGES_HTML = r"""<!DOCTYPE html>
           --ok: #37c871; --ok-bg: rgba(55,200,113,.16); --warn: #f0b45a; --warn-bg: rgba(240,180,90,.18);
           --danger: #ff7b72; --danger-bg: rgba(255,123,114,.16); }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; font-size: 14px; font-family: var(--orca-font, system-ui); }
+  html, body { margin: 0; height: 100%; font-size: 13px; font-family: var(--orca-font, system-ui); }
+  /* Form controls don't inherit the page font by default. */
+  input, select, textarea, button { font-family: inherit; }
+  small { font-size: 12px; }
   body { display: flex; overflow: hidden; }
   nav { width: 200px; flex: none; border-right: 1px solid var(--bd); display: flex; flex-direction: column; }
   nav .printer { padding: 14px 16px; border-bottom: 1px solid var(--bd); }
@@ -51,7 +54,6 @@ PAGES_HTML = r"""<!DOCTYPE html>
   button.danger:not(.tab):not(.icon):hover { background: var(--btn-alert); color: #fefefe; }
   button:not(.tab):not(.icon):disabled { background: var(--btn-bg); color: var(--btn-fg-disabled); opacity: 1; cursor: default; }
   .box > h4 button:not(.tab) { height: 26px; line-height: 26px; padding: 0 10px; }
-  .edit button { height: 26px !important; line-height: 26px !important; padding: 0 10px !important; }
   input[type=checkbox] { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; margin: 0; padding: 0;
            border: 1px solid var(--control-bd); border-radius: 2px; background: var(--orca-bg, #fff); display: inline-grid; place-content: center;
            vertical-align: middle; cursor: pointer; }
@@ -95,13 +97,22 @@ PAGES_HTML = r"""<!DOCTYPE html>
   .icon:hover { border-color: var(--acc); }
   .icon svg { width: 16px; height: 16px; fill: currentColor; }
   .icon.stop svg { fill: #d9534f; }
-  .temps { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+  .temps { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .temps .set.editing { background: var(--row-selected); }
+  .setter { display: none; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--bd); }
+  .setter.on { display: flex; }
+  .setter input[type=range] { flex: 1; min-width: 140px; accent-color: var(--acc); }
+  .setter input[type=number] { width: 70px; text-align: right; }
+  .setter .presets { display: flex; gap: 4px; }
+  .setter .presets button:not(.tab) { height: 26px; line-height: 26px; padding: 0 8px; }
   .temps div { padding: 10px; text-align: center; border-right: 1px solid var(--bd); }
   .temps div:last-child { border-right: 0; }
   .temps svg { width: 22px; height: 22px; fill: none; stroke: var(--mu); stroke-width: 1.6; display: block; margin: 0 auto 4px; }
   .temps div { padding: 16px 10px; }
   .temps b { font-size: 20px; white-space: nowrap; } .temps small { color: var(--mu); display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .temps div { min-width: 0; }
+  .temps > div:nth-child(n+5) { border-top: 1px solid var(--bd); }
+  .temps > div:nth-child(4n) { border-right: 0; }
   .tools { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 12px; }
   .tool small, .tool .temp { overflow: hidden; text-overflow: ellipsis; }
   .tool .temp { white-space: nowrap; }
@@ -120,6 +131,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
   table { width: 100%; border-collapse: collapse; }
   .cat-bar { display: flex; gap: 8px; align-items: center; }
   .cat-bar input { flex: 1; } .cat-bar select { width: 140px; }
+  .cat-filters { margin-top: 8px; } .cat-filters select { flex: 1; width: auto; min-width: 0; }
   #cat-notice { display: none; margin-top: 8px; padding: 6px 10px; border: 1px solid var(--warn); border-radius: 6px; color: var(--warn); background: var(--warn-bg); }
   #cat-list { max-height: 420px; overflow: auto; margin-top: 8px; }
   #cat-list .brand { font-weight: 600; padding: 8px 0 4px; border-bottom: 1px solid var(--bd); }
@@ -127,6 +139,8 @@ PAGES_HTML = r"""<!DOCTYPE html>
   #cat-list .row .nm { flex: 1; min-width: 0; }
   #cat-list .row small { color: var(--mu); margin-left: 8px; }
   #cat-list .row button { padding: 2px 8px; }
+  #cat-list .row .src { display: flex; gap: 4px; flex: none; margin-left: auto; }
+  #cat-list .row .src svg { display: block; }
   td, th { text-align: left; padding: 4px 10px; border-bottom: 1px solid var(--bd); vertical-align: middle; height: 34px; }
   th { color: inherit; font-weight: 600; font-size: 12px; height: auto; padding: 8px 10px; }
   tbody tr { cursor: pointer; }
@@ -156,11 +170,27 @@ PAGES_HTML = r"""<!DOCTYPE html>
   .banner { display: none; margin: 12px 12px 0; padding: 8px 12px; border: 1px solid; border-radius: 6px; }
   #identity-error { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); font-weight: 600; }
   #preset-notice { border-color: var(--warn); background: var(--warn-bg); color: inherit; }
-  #wiz { display: none; position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.6); align-items: center; justify-content: center; }
+  #mc .wbox { min-height: 0; overflow-x: hidden; }
+  #mc button.opt { display: block; width: 100%; height: auto; line-height: 1.35; white-space: normal; text-align: left; margin-top: 8px; padding: 8px 12px; }
+  #mc .opt small { display: block; color: var(--mu); font-weight: normal; margin-top: 2px; }
+  #mc .opt.primary small { color: rgba(255,255,255,.85); }
+  .tool .swap { color: var(--warn); }
+  #pick-slot { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #pick #cat-box { border: 0; border-radius: 0; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #pick #cat-box > .pad { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #pick #cat-list { flex: 1; min-height: 0; max-height: none; overflow-y: auto; }
+  #pick .wnav { margin: 0; padding: 10px 12px; border-top: 1px solid var(--bd); }
+  #cat-list .row.pickable { cursor: pointer; padding-left: 6px; border-radius: 4px; user-select: none; -webkit-user-select: none; }
+  #cat-list .row.pickable:hover { background: var(--row-hover); }
+  #cat-list .row.picked { background: var(--row-selected); }
+  .tools:not(.assign) .tool { cursor: pointer; } .tools:not(.assign) .tool:hover { background: var(--panel); }
+  #wiz, #mc, #pick { display: none; position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.6); align-items: center; justify-content: center; }
   #wiz .wbox { min-height: 340px; display: flex; flex-direction: column; } #wiz .wnav { margin-top: auto; padding-top: 18px; }
-  #wiz.on { display: flex; }
-  #wiz .wbox { width: min(620px, 92vw); max-height: 88vh; overflow: auto; background: var(--orca-bg, #fff); color: var(--orca-fg, inherit);
+  #wiz.on, #mc.on, #pick.on { display: flex; }
+  #mc { z-index: 21; }
+  #wiz .wbox, #mc .wbox, #pick .wbox { width: min(620px, 92vw); max-height: 88vh; overflow: auto; background: var(--orca-bg, #fff); color: var(--orca-fg, inherit);
                border: 1px solid var(--bd); border-radius: 8px; padding: 18px 22px; box-shadow: 0 10px 28px rgba(0,0,0,.3); }
+  #pick .wbox { width: min(760px, 94vw); height: 80vh; min-height: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
   #wiz h3 { margin: 0 0 12px; }
   .wsteps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0 0 14px; counter-reset: s; }
   .wsteps li { flex: 1; font-size: 12px; color: var(--mu); border-top: 3px solid var(--bd); padding-top: 4px; counter-increment: s; }
@@ -202,9 +232,6 @@ PAGES_HTML = r"""<!DOCTYPE html>
   .temps .set { cursor: pointer; border-radius: 4px; }
   .temps .set:hover { background: var(--panel); }
   .temps .set.off { cursor: default; } .temps .set.off:hover { background: none; }
-  .edit { display: none; gap: 6px; justify-content: center; margin-top: 6px; }
-  .edit input { width: 70px !important; padding: 3px; text-align: right; }
-  .set.editing .edit { display: flex; }
   .jog { display: flex; gap: 24px; padding: 14px 12px; align-items: center; justify-content: center; border-top: 1px solid var(--bd); }
   .pad3 { display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 40px); gap: 4px; }
   .pad3 button, .zcol button { all: unset; height: auto !important; padding: 0 !important; line-height: normal !important; cursor: pointer; border: 1px solid rgba(127,127,127,.35); background: rgba(127,127,127,.12); border-radius: 6px;
@@ -262,17 +289,21 @@ PAGES_HTML = r"""<!DOCTYPE html>
       <div class="box">
         <h4>Control</h4>
         <div class="temps">
-          <div class="set" data-cmd="SET_NOZZLE_TEMPERATURE" data-arg="nozzle_temperature" data-max="290" title="Set the active tool's temperature"><svg viewBox="0 0 24 24"><path d="M8 3h8v6l-4 5-4-5z"/><path d="M12 14v6"/></svg><b id="t-noz">-</b><small id="t-noz-t">Nozzle</small>
-            <span class="edit"><input type="number" min="0" max="290"><button>Set</button></span></div>
-          <div class="set" data-cmd="SET_HEATBED_TEMPERATURE" data-arg="bed_temperature" data-max="120" title="Set the bed temperature"><svg viewBox="0 0 24 24"><rect x="3" y="14" width="18" height="4" rx="1"/><path d="M7 11c1-2-1-3 0-5M12 11c1-2-1-3 0-5M17 11c1-2-1-3 0-5"/></svg><b id="t-bed">-</b><small id="t-bed-t">Bed</small>
-            <span class="edit"><input type="number" min="0" max="120"><button>Set</button></span></div>
+          <div class="set" data-cmd="SET_NOZZLE_TEMPERATURE" data-arg="nozzle_temperature" data-min="0" data-max="290" data-step="5" data-presets="0,215,240,260" title="Set the active tool's temperature"><svg viewBox="0 0 24 24"><path d="M8 3h8v6l-4 5-4-5z"/><path d="M12 14v6"/></svg><b id="t-noz">-</b><small id="t-noz-t">Nozzle</small></div>
+          <div class="set" data-cmd="SET_HEATBED_TEMPERATURE" data-arg="bed_temperature" data-min="0" data-max="120" data-step="5" data-presets="0,60,80,100" title="Set the bed temperature"><svg viewBox="0 0 24 24"><rect x="3" y="14" width="18" height="4" rx="1"/><path d="M7 11c1-2-1-3 0-5M12 11c1-2-1-3 0-5M17 11c1-2-1-3 0-5"/></svg><b id="t-bed">-</b><small id="t-bed-t">Bed</small></div>
           <div><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5"/></svg><b id="t-z">-</b><small>Z height</small></div>
-        </div>
-        <div class="temps" style="border-top: 1px solid var(--bd)">
+          <div title="The tool the printer has picked up"><svg viewBox="0 0 24 24"><path d="M7 3h10v7l-5 6-5-6z"/><path d="M12 16v5"/></svg><b id="t-tool">-</b><small>Active tool</small></div>
           <div><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-7 4-7 0 3-2 5-4 7zM14 12c4 0 7 1 7 4-3 0-5-2-7-4zM12 14c0 4-1 7-4 7 0-3 2-5 4-7zM10 12c-4 0-7-1-7-4 3 0 5 2 7 4z"/></svg><b id="t-fan">-</b><small>Part fan</small></div>
           <div><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-7 4-7 0 3-2 5-4 7zM14 12c4 0 7 1 7 4-3 0-5-2-7-4zM12 14c0 4-1 7-4 7 0-3 2-5 4-7zM10 12c-4 0-7-1-7-4 3 0 5 2 7 4z"/></svg><b id="t-hfan">-</b><small>Hotend fan</small></div>
-          <div class="set" data-cmd="SET_SPEED" data-arg="speed" data-min="10" data-max="200" title="Set the print speed"><svg viewBox="0 0 24 24"><path d="M4 18l5-6 4 4 7-9"/><path d="M15 7h5v5"/></svg><b id="t-speed">-</b><small>Speed</small>
-            <span class="edit"><input type="number" min="10" max="200"><button>Set</button></span></div>
+          <div class="set" data-cmd="SET_SPEED" data-arg="speed" data-min="10" data-max="300" data-step="5" data-presets="50,100,150,200" title="Set the print speed"><svg viewBox="0 0 24 24"><path d="M4 18l5-6 4 4 7-9"/><path d="M15 7h5v5"/></svg><b id="t-speed">-</b><small>Speed</small></div>
+          <div class="set" data-cmd="SET_FLOW" data-arg="flow" data-min="10" data-max="150" data-step="1" data-presets="90,95,100,105" title="Set the print flow"><svg viewBox="0 0 24 24"><path d="M12 3c3 5 6 8 6 12a6 6 0 0 1-12 0c0-4 3-7 6-12z"/></svg><b id="t-flow">-</b><small>Flow</small></div>
+        </div>
+        <div class="setter" id="setter">
+          <b id="setter-label"></b>
+          <input type="range" id="setter-range">
+          <input type="number" id="setter-num"><span id="setter-unit"></span>
+          <span class="presets" id="setter-presets"></span>
+          <button class="primary" id="setter-set">Set</button><button id="setter-close">Cancel</button>
         </div>
         <div class="jog" id="jog">
           <div class="pad3">
@@ -319,22 +350,30 @@ PAGES_HTML = r"""<!DOCTYPE html>
     <div class="box">
       <h4>Filament per tool</h4>
       <div class="tools assign" id="tools-assign"></div>
-      <div class="pad" style="padding-top:0;color:var(--mu)">Choosing a filament records it on the tool in Prusa Connect, like Connect's Assign, and lets Orca's filament sync pick it up. It does not load or move filament.</div>
+      <div class="pad" style="padding-top:0;color:var(--mu)">Choosing a filament sets it for slicing and records it on the tool in Prusa Connect. It does not load or move filament.</div>
     </div>
-    <div class="box"><h4>Sync with Orca's filament slots</h4>
-      <table><thead><tr><th><input type="checkbox" id="fs-all" title="Select all"></th><th>Tool</th><th>Printer</th><th>Orca slot</th><th></th></tr></thead><tbody id="fsync"></tbody></table>
+    <div class="box"><h4>Sync with the slicer's filament slots</h4>
+      <table><thead><tr><th><input type="checkbox" id="fs-all" title="Select all"></th><th>Tool</th><th>Printer</th><th>Slicer slot</th><th></th></tr></thead><tbody id="fsync"></tbody></table>
       <div class="pad">
-        <div class="btns" style="margin-top:0"><button id="b-fs-orca">Printer → Orca</button><button id="b-fs-printer">Orca → printer</button></div>
-        <div style="color:var(--mu); margin-top:8px">Tool N is filament slot N in the Prepare tab. Printer → Orca picks the matching filament preset for each selected slot and sets the slot colour to the spool colour. Orca → printer records each selected slot's filament and colour on the tool in Prusa Connect (a label only; nothing is loaded).</div>
+        <div class="btns" style="margin-top:0"><button id="b-fs-orca">Printer → Slicer</button><button id="b-fs-printer">Slicer → Printer</button></div>
+        <label style="display:flex; gap:6px; align-items:center; margin:10px 0 0; color:inherit" title="When a filament is loaded on the printer, set the matching preset in its slicer slot without asking. Skipped when the slot holds one of your own presets of the same material."><input type="checkbox" id="s-follow"> Follow the printer: a filament loaded on the printer goes to its slicer slot automatically</label>
+        <div style="color:var(--mu); margin-top:8px">Tool N is filament slot N in the Prepare tab. Printer → Slicer picks the matching filament preset for each selected slot. Slicer → Printer records each selected slot's filament on the tool in Prusa Connect (a label only; nothing is loaded).</div>
       </div>
     </div>
-    <div class="box"><h4>Find a filament</h4><div class="pad">
+    <div class="box" id="cat-box"><h4><b id="cat-title">Find a filament</b><span><button id="b-cat-close" style="display:none">Done</button></span></h4><div class="pad">
       <div class="cat-bar"><input type="text" id="cat-q" placeholder="Brand, name or colour, e.g. eSUN PLA+ yellow">
-        <select id="cat-type"><option value="">All materials</option><option>PLA</option><option>PETG</option><option>ASA</option><option>ABS</option><option>PC</option><option>PA</option><option>TPU</option><option>PVB</option></select>
         <button id="b-cat" class="primary">Search</button></div>
+      <div class="cat-bar cat-filters">
+        <select id="cat-type" title="Material type, as the printer knows it"><option value="">All materials</option><option>PLA</option><option>PETG</option><option>ASA</option><option>ABS</option><option>PC</option><option>PA</option><option value="FLEX">FLEX (TPU)</option><option>PVB</option><option>HIPS</option><option>PP</option><option>PVA</option><option>BVOH</option></select>
+        <select id="cat-brand" title="Manufacturer"><option value="">All brands</option></select>
+        <select id="cat-color" title="Colour"><option value="">All colours</option><option value="white">● White</option><option value="black">● Black</option><option value="grey">● Grey</option><option value="silver">● Silver</option><option value="gold">● Gold</option><option value="red">● Red</option><option value="orange">● Orange</option><option value="yellow">● Yellow</option><option value="green">● Green</option><option value="blue">● Blue</option><option value="purple">● Purple</option><option value="pink">● Pink</option><option value="brown">● Brown</option><option value="beige">● Beige</option><option value="natural">○ Natural</option><option value="multicolor">◑ Multicolour</option><option value="unknown">? Unknown</option></select>
+        <select id="cat-finish" title="Finish"><option value="">All finishes</option><option value="none">Plain (no finish)</option><option value="transparent">Transparent</option><option value="translucent">Translucent</option><option value="silk">Silk</option><option value="matte">Matte</option><option value="glitter">Glitter</option><option value="metallic">Metallic</option><option value="glow">Glow in the dark</option><option value="marble">Marble</option><option value="wood">Wood</option><option value="neon">Neon</option><option value="pastel">Pastel</option><option value="carbon">Carbon look</option></select></div>
+      <div id="cat-fit-row" style="display:none; margin-top:8px; gap:18px; align-items:center">
+        <label id="cat-fit-label"><input type="checkbox" id="cat-fit" checked> Compatible with nozzle</label>
+        <label id="cat-same-label"><input type="checkbox" id="cat-same"> <span id="cat-same-text">Same material as loaded</span></label>
+        <small id="cat-hidden" style="color:var(--mu)"></small></div>
       <div id="cat-notice"></div>
       <div id="cat-list"></div>
-      <div style="color:var(--mu); margin-top:8px">From Prusa Connect and the Open Filament Database. <b>T1, T2…</b> imports the filament and uses it for that tool when slicing; <b>Import</b> only adds it to Orca's filament list. Settings come from the closest Orca profile for this printer, with the maker's temperatures where known.</div>
     </div></div>
   </section>
 
@@ -343,7 +382,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
       <div class="box">
         <h4>Print history <small id="h-stats"></small></h4>
         <table><thead><tr><th>Result</th><th>File</th><th>Sent</th><th>Time</th></tr></thead><tbody id="history"></tbody></table>
-        <div class="pad" id="h-empty" style="color:var(--mu)">No prints yet. Prints sent from Orca and prints started on the printer appear here.</div>
+        <div class="pad" id="h-empty" style="color:var(--mu)">No prints yet. Prints sent from the slicer and prints started on the printer appear here.</div>
       </div>
     </div>
     <div class="col" style="flex: 1">
@@ -373,7 +412,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
       <table><thead><tr><th><input type="checkbox" id="nz-all" title="Select all"></th><th>Tool</th><th>Printer</th><th>Printer preset</th><th></th></tr></thead><tbody id="nozzles"></tbody></table>
       <div class="pad">
         <div class="btns" style="margin-top:0"><button id="b-nz-preset">Printer → preset</button><button id="b-nz-printer">Preset → printer</button></div>
-        <div style="color:var(--mu); margin-top:8px">Nozzle diameter and hardened nozzle per tool. Printer → preset edits the selected printer preset (save it in Orca to keep it). Preset → printer changes the tool settings on the printer through Prusa Connect. High flow has no setting in Orca's Prusa presets and is only shown.</div>
+        <div style="color:var(--mu); margin-top:8px">Nozzle diameter and hardened nozzle per tool. Printer → preset edits the selected printer preset (save it in the slicer to keep it). Preset → printer changes the tool settings on the printer through Prusa Connect. High flow has no setting in Orca's Prusa presets and is only shown.</div>
       </div>
     </div>
     <div class="box"><h4>Notifications <span><button id="b-test-notify">Test</button></span></h4><div class="pad" id="notify" style="display:flex; gap: 6px 18px; flex-wrap: wrap"></div></div>
@@ -399,6 +438,17 @@ PAGES_HTML = r"""<!DOCTYPE html>
 </main>
 <div id="busy"><div class="track"><i></i></div><span class="label" id="busy-label"></span></div>
 <div id="toast"></div>
+<div id="pick" role="dialog" aria-modal="true" aria-labelledby="cat-title"><div class="wbox">
+  <div id="pick-slot"></div>
+  <div class="wnav btns" style="justify-content:flex-end"><button id="pick-cancel">Cancel</button><button class="primary" id="pick-ok" disabled>Accept</button></div>
+</div></div>
+<div id="mc" role="dialog" aria-modal="true" aria-labelledby="mc-title"><div class="wbox">
+  <h3 id="mc-title">Another material type</h3>
+  <div id="mc-text"></div>
+  <button class="opt primary" id="mc-swap"><b id="mc-swap-t"></b><small id="mc-swap-s"></small></button>
+  <button class="opt" id="mc-orca"><b id="mc-orca-t"></b><small id="mc-orca-s"></small></button>
+  <button class="opt" id="mc-cancel"><b>Cancel</b><small>Nothing changes.</small></button>
+</div></div>
 <div id="wiz" role="dialog" aria-modal="true" aria-labelledby="wiz-title"><div class="wbox">
   <h3 id="wiz-title">Set up your Prusa printer</h3>
   <ol class="wsteps"><li data-s="login">Log in</li><li data-s="printer">Printer</li><li data-s="review">Settings</li><li data-s="test">Test</li></ol>
@@ -447,6 +497,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
       document.querySelectorAll('.page').forEach(function (p) { p.classList.toggle('on', p.id === 'p-' + b.dataset.page); });
       if (b.dataset.page === 'files') post({ command: 'list_files' });
       if (b.dataset.page === 'history') post({ command: 'history' });
+      if (b.dataset.page === 'filament' && !$('cat-list').childNodes.length) catSearch();
     };
   });
 
@@ -465,12 +516,23 @@ PAGES_HTML = r"""<!DOCTYPE html>
     if (t.name) { var n = document.createElement('small'); n.textContent = t.name; txt.appendChild(n); }
     el.appendChild(txt);
     var z = document.createElement('div'); z.className = 'temp'; z.textContent = deg(t.temperature, t.target) + ' · ' + t.nozzle_diameter + ' mm'; el.appendChild(z);
-    if (assign && t.material && t.choices && t.choices.length) {
-      var sel = document.createElement('select'); sel.style.marginTop = '6px';
-      var first = document.createElement('option'); first.value = ''; first.textContent = t.preset || 'Set filament…'; sel.appendChild(first);
-      t.choices.forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
-      sel.onchange = function () { if (sel.value) post({ command: 'assign', tool: t.tool_number, preset: sel.value }); };
-      el.appendChild(sel);
+    if (assign) {
+      if (t.swap) {
+        var sw = document.createElement('small'); sw.className = 'swap';
+        sw.textContent = 'Load ' + t.swap.material + ' on the printer: ' + t.swap.title;
+        el.appendChild(sw);
+        var cx = document.createElement('button'); cx.textContent = 'Cancel change'; cx.style.marginTop = '6px';
+        cx.onclick = function () { post({ command: 'cancel_swap', tool: t.tool_number }); };
+        el.appendChild(cx);
+      }
+      if (t.preset) { var pr = document.createElement('small'); pr.className = 'preset'; pr.title = 'Slicer preset'; pr.textContent = t.preset; el.appendChild(pr); }
+      var pick = document.createElement('button'); pick.textContent = 'Select filament'; pick.style.marginTop = '6px';
+      if (catTool === t.tool_number) pick.className = 'primary';
+      pick.onclick = function () { catFor(t.tool_number); };
+      el.appendChild(pick);
+    } else if (t.material !== undefined) {
+      el.title = 'Choose the filament for ' + (t.label || 'T' + t.tool_number);
+      el.onclick = function () { pickOpen(t.tool_number); };
     }
     return el;
   }
@@ -489,6 +551,9 @@ PAGES_HTML = r"""<!DOCTYPE html>
     text('t-bed', d.connected ? deg(d.bed_temp, d.bed_target) : '');
     text('t-z', d.z !== undefined && d.z !== null ? d.z.toFixed(1) + ' mm' : '');
     text('t-speed', d.speed ? d.speed + '%' : '');
+    text('t-flow', d.flow ? d.flow + '%' : '');
+    var act = (d.tools || []).filter(function (t) { return t.is_active; })[0];
+    text('t-tool', d.connected ? (act ? act.label : 'none') : '');
     text('t-fan', d.connected ? (d.fan_print ? d.fan_print + ' rpm' : 'off') : '');
     text('t-hfan', d.connected ? (d.fan_hotend ? d.fan_hotend + ' rpm' : 'off') : '');
     var j = d.job;
@@ -532,6 +597,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
     if (document.activeElement !== $('s-cam')) $('s-cam').value = s.camera.rtsp_url || '';
     $('s-pw-set').textContent = (s.prusalink.password || s.prusalink.api_key) ? '(set)' : '(not set)';
     renderNotify(s.notify);
+    $('s-follow').checked = !!(s.filament && s.filament.follow_printer);
     var p = $('printers');
     if (s.connect.printer_uuid && p.options.length <= 1 && p.value !== s.connect.printer_uuid) {
       p.textContent = '';
@@ -576,6 +642,8 @@ PAGES_HTML = r"""<!DOCTYPE html>
     if (m.type === 'telemetry') render(m.data);
     if (m.type === 'settings') renderSettings(m.data);
     if (m.type === 'catalog') renderCatalog(m);
+    if (m.type === 'material_change') materialChange(m);
+    if (m.type === 'open_finder' && !picking) pickOpen(m.tool);
     if (m.type === 'about') { $('ab-version').textContent = m.data.version; $('ab-kind').textContent = m.data.kind; $('ab-location').textContent = m.data.location; }
     if (m.type === 'wizard') onWizard(m);
     if (m.type === 'message') { $('msg').textContent = m.text; toast(m.text); if ($('wiz').classList.contains('on')) $('w-next').disabled = false; }
@@ -717,24 +785,41 @@ PAGES_HTML = r"""<!DOCTYPE html>
     document.querySelectorAll('.temps .set').forEach(function (el) { el.classList.toggle('off', !can(el.dataset.cmd)); });
     applyMotion();
   }
+  // One editor under the tiles: a slider and a number kept in step, quick values, Set.
+  var setterFor = null;
+  function closeSetter() { if (setterFor) setterFor.classList.remove('editing'); setterFor = null; $('setter').classList.remove('on'); }
+  function openSetter(el) {
+    closeSetter(); setterFor = el; el.classList.add('editing');
+    var unit = /TEMPERATURE/.test(el.dataset.cmd) ? '°C' : '%';
+    var r = $('setter-range'), n = $('setter-num');
+    [r, n].forEach(function (x) { x.min = el.dataset.min; x.max = el.dataset.max; x.step = el.dataset.step; });
+    var now = parseInt((el.querySelector('b').textContent.match(/(\d+)\s*(?:°C|%)?\s*$/) || [])[1], 10);
+    var target = parseInt((el.querySelector('b').textContent.match(/\/\s*(\d+)/) || [])[1], 10);
+    var v = !isNaN(target) ? target : !isNaN(now) && unit === '%' ? now : parseInt(el.dataset.presets.split(',')[1], 10);
+    r.value = n.value = v;
+    text('setter-label', el.querySelector('small').textContent); text('setter-unit', unit);
+    var p = $('setter-presets'); p.textContent = '';
+    el.dataset.presets.split(',').forEach(function (x) {
+      var b = document.createElement('button'); b.textContent = x === '0' && unit === '°C' ? 'Off' : x + unit;
+      b.onclick = function () { r.value = n.value = x; }; p.appendChild(b);
+    });
+    $('setter').classList.add('on'); n.focus(); n.select();
+  }
+  function sendSetter() {
+    var el = setterFor; if (!el) return;
+    var v = parseInt($('setter-num').value, 10), min = parseInt(el.dataset.min, 10), max = parseInt(el.dataset.max, 10);
+    if (isNaN(v) || v < min || v > max) { toast('Enter ' + min + '–' + max + '.'); return; }
+    var kw = {}; kw[el.dataset.arg] = v;
+    post({ command: 'control', name: el.dataset.cmd, kwargs: kw });
+    closeSetter();
+  }
+  $('setter-range').oninput = function () { $('setter-num').value = this.value; };
+  $('setter-num').oninput = function () { $('setter-range').value = this.value; };
+  $('setter-num').onkeydown = function (e) { if (e.key === 'Enter') sendSetter(); if (e.key === 'Escape') closeSetter(); };
+  $('setter-set').onclick = sendSetter;
+  $('setter-close').onclick = closeSetter;
   document.querySelectorAll('.temps .set').forEach(function (el) {
-    var input = el.querySelector('input');
-    el.onclick = function (e) {
-      if (el.classList.contains('off') || el.classList.contains('editing')) return;
-      el.classList.add('editing'); input.value = ''; input.focus();
-    };
-    function send() {
-      var v = parseInt(input.value, 10), min = parseInt(el.dataset.min || '0', 10), max = parseInt(el.dataset.max, 10);
-      el.classList.remove('editing');
-      if (isNaN(v) || v < min || v > max) return;
-      var kw = {}; kw[el.dataset.arg] = v;
-      post({ command: 'control', name: el.dataset.cmd, kwargs: kw });
-    }
-    el.querySelector('.edit button').onclick = function (e) { e.stopPropagation(); send(); };
-    input.onkeydown = function (e) { if (e.key === 'Enter') send(); if (e.key === 'Escape') el.classList.remove('editing'); };
-    // Close when focus leaves the editor (the Set button counts as inside).
-    el.addEventListener('focusout', function () { setTimeout(function () { if (!el.contains(document.activeElement)) el.classList.remove('editing'); }, 0); });
-    input.onclick = function (e) { e.stopPropagation(); };
+    el.onclick = function () { if (el.classList.contains('off')) return; if (setterFor === el) closeSetter(); else openSetter(el); };
   });
   document.querySelectorAll('#steps button').forEach(function (b) {
     b.onclick = function () { document.querySelectorAll('#steps button').forEach(function (x) { x.classList.toggle('on', x === b); }); step = parseFloat(b.textContent); };
@@ -786,38 +871,153 @@ PAGES_HTML = r"""<!DOCTYPE html>
   }
   function swatch(color, label) {
     var s = document.createElement('span'), i = document.createElement('i');
-    i.style.cssText = 'display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--bd);vertical-align:-2px;margin-right:6px;background:' + (color || 'transparent');
+    i.style.cssText = 'display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:6px;'
+      + (color ? 'border:1px solid var(--bd);background:' + color : 'border:1px dashed var(--bd);opacity:.5');
+    i.title = color ? color : 'No colour known';
     s.appendChild(i); s.appendChild(document.createTextNode(label)); return s;
   }
 
-  // Filament catalogue (Filament page).
-  var toolCount = 0;
-  function catSearch() { post({ command: 'catalog_search', query: $('cat-q').value.trim(), material: $('cat-type').value }); }
+  // Filament finder (Filament page): for one tool after its Select filament button, else general.
+  var toolCount = 0, catTool = 0;
+  var SOURCE_NAMES = { orca: 'Already in the slicer', connect: 'Prusa Connect', ofd: 'Open Filament Database' };
+  var SOURCE_ICONS = {
+    orca: '<path d="M12 2l9 5v10l-9 5-9-5V7z" fill="none" stroke="#009688" stroke-width="2"/><path d="M3 7l9 5 9-5M12 12v10" fill="none" stroke="#009688" stroke-width="2"/>',
+    connect: '<circle cx="12" cy="12" r="10" fill="#fa6831"/><path d="M9 7h4.5a3 3 0 0 1 0 6H9zM9 13v4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>',
+    ofd: '<ellipse cx="12" cy="5.5" rx="8" ry="3" fill="none" stroke="#5b7fd6" stroke-width="2"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" fill="none" stroke="#5b7fd6" stroke-width="2"/>'
+  };
+  function sourceIcons(sources) {
+    var box = document.createElement('span'); box.className = 'src';
+    box.title = sources.map(function (s) { return SOURCE_NAMES[s] || s; }).join(' + ');
+    sources.forEach(function (s) {
+      if (!SOURCE_ICONS[s]) return;
+      box.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" width="16" height="16" aria-label="' + SOURCE_NAMES[s] + '">' + SOURCE_ICONS[s] + '</svg>');
+    });
+    return box;
+  }
+  function catSearch() {
+    post({ command: 'catalog_search', query: $('cat-q').value.trim(), material: $('cat-type').value, tool: catTool,
+           brand: $('cat-brand').value, color: $('cat-color').value, finish: $('cat-finish').value, fit: $('cat-fit').checked, same: $('cat-same').checked });
+  }
+  // Status page: the same finder in a dialog; pick a row, then Accept (or double-click it).
+  var picking = false, pickedKey = '';
+  function pickSelect(key) {
+    pickedKey = key; $('pick-ok').disabled = !key;
+    document.querySelectorAll('#cat-list .row').forEach(function (r) { r.classList.toggle('picked', r.dataset.key === key); });
+  }
+  function pickOpen(tool) {
+    picking = true; pickSelect('');
+    $('pick-slot').appendChild($('cat-box'));
+    $('pick').classList.add('on');
+    catFor(tool);
+  }
+  function pickClose() {
+    picking = false; pickSelect('');
+    $('p-filament').appendChild($('cat-box'));
+    $('pick').classList.remove('on');
+    catFor(0);
+  }
+  function pickAccept() {
+    if (!pickedKey) return;
+    post({ command: 'catalog_use', key: pickedKey, tool: catTool });
+    pickClose();
+  }
+  $('pick-ok').onclick = pickAccept;
+  $('pick-cancel').onclick = pickClose;
+  $('pick').addEventListener('keydown', function (e) { if (e.key === 'Escape') pickClose(); });
+  function catFor(tool) {
+    catTool = tool; toolsKey = '';
+    text('cat-title', tool ? 'Select filament for T' + tool : 'Find a filament');
+    show('b-cat-close', !!tool && !picking);
+    $('cat-fit').checked = true; $('cat-same').checked = false; $('cat-q').value = '';
+    $('cat-type').value = ''; $('cat-brand').value = ''; $('cat-color').value = ''; $('cat-finish').value = '';
+    catSearch();
+    if (!picking) $('cat-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('cat-q').focus();
+  }
+  $('b-cat-close').onclick = function () { catFor(0); };
   $('b-cat').onclick = catSearch;
+  $('cat-fit').onchange = catSearch;
+  $('cat-same').onchange = catSearch;
+  $('cat-type').onchange = catSearch;
+  $('cat-brand').onchange = catSearch;
+  $('cat-color').onchange = catSearch;
+  $('cat-finish').onchange = catSearch;
+  // Colour the swatch dots in the colour menu.
+  var DOT = { white: '#f4f4f4', black: '#222', grey: '#8a8a8a', silver: '#c0c4c8', gold: '#d4a017', red: '#d32f2f', orange: '#f57c00',
+              yellow: '#fbc02d', green: '#388e3c', blue: '#1976d2', purple: '#7b1fa2', pink: '#ec4f9c', brown: '#795548', beige: '#d9c39a' };
+  [].forEach.call($('cat-color').options, function (o) { if (DOT[o.value]) o.style.color = DOT[o.value]; });
+  function fillBrands(names) {
+    var sel = $('cat-brand'); if (!names || sel.options.length > 1) return;
+    names.forEach(function (n) { var o = document.createElement('option'); o.textContent = n; sel.appendChild(o); });
+  }
   $('cat-q').onkeydown = function (e) { if (e.key === 'Enter') catSearch(); };
   function renderCatalog(m) {
+    if (m.tool !== catTool) return;  // an answer for a tool the user already left
+    fillBrands(m.brands);
     var n = $('cat-notice'); n.textContent = m.notice || ''; n.style.display = m.notice ? 'block' : 'none';
+    $('cat-fit-row').style.display = m.tool ? 'flex' : 'none';
+    $('cat-fit-label').title = m.nozzle || '';
+    $('cat-same-label').style.display = m.loaded ? '' : 'none';
+    if (m.loaded) {
+      text('cat-same-text', 'Same material as loaded (' + m.loaded + ')');
+      $('cat-same-label').title = 'T' + m.tool + ' has ' + m.loaded + ' loaded. Loads and prints the same:\n' + m.same_types.join(', ');
+    }
+    $('cat-hidden').textContent = m.hidden ? m.hidden + ' hidden' : '';
     var list = $('cat-list'); list.textContent = '';
     if (!m.results.length) {
       var e = document.createElement('div'); e.style.color = 'var(--mu)'; e.style.padding = '8px 0';
-      e.textContent = m.query ? 'Nothing found for "' + m.query + '".' : 'Type a brand, name or colour and press Search.';
+      e.textContent = m.query ? 'Nothing found for "' + m.query + '". Try fewer words, or the brand and material only.'
+        : !m.recent ? 'Nothing matches these filters. Clear one of them.'
+        : (m.recent && m.hidden ? 'None of your recent filaments fits this nozzle. Search for one.' : 'No recent filaments yet. Type a brand, name or colour and press Search.');
       list.appendChild(e); return;
     }
-    var brand = null;
+    var group = null;
     m.results.forEach(function (r) {
-      if (r.brand_key !== brand) { brand = r.brand_key; var h = document.createElement('div'); h.className = 'brand'; h.textContent = brand || 'Unknown brand'; list.appendChild(h); }
+      if (r.group !== group) { group = r.group; var h = document.createElement('div'); h.className = 'brand'; h.textContent = r.group_label || 'Unknown brand'; list.appendChild(h); }
       var row = document.createElement('div'); row.className = 'row';
-      var nm = document.createElement('span'); nm.className = 'nm'; nm.appendChild(swatch(r.color, r.name));
-      var info = document.createElement('small'); info.textContent = r.type + (r.has_data ? '' : ' · no print data') + (r.source === 'ofd' ? ' · Open Filament DB' : ''); nm.appendChild(info);
+      var nm = document.createElement('span'); nm.className = 'nm'; nm.appendChild(swatch(r.color, /^(All recent|Recent for )/.test(group) ? r.title : r.name));
+      var bits = [r.type];
+      if (r.abrasive) bits.push('abrasive');
+      if (r.high_flow) bits.push('high flow');
+      if (!r.has_data) bits.push('no print data');
+      var info = document.createElement('small'); info.textContent = bits.join(' · '); nm.appendChild(info);
       row.appendChild(nm);
-      for (var i = 1; i <= toolCount; i++) row.appendChild(catButton('T' + i, r.key, i, 'Import and use for tool T' + i + ' when slicing'));
-      row.appendChild(catButton('Import', r.key, 0, 'Add to Orca\'s filament list'));
+      row.appendChild(sourceIcons(r.sources));
+      if (picking) {
+        row.className = 'row pickable'; row.dataset.key = r.key;
+        row.onclick = function () { pickSelect(r.key); };
+        row.onmousedown = function (e) { if (e.detail > 1) e.preventDefault(); };
+        row.ondblclick = function (e) { e.preventDefault(); window.getSelection().removeAllRanges(); pickSelect(r.key); pickAccept(); };
+        list.appendChild(row);
+        return;
+      }
+      if (catTool) row.appendChild(catButton('Use for T' + catTool, r.key, catTool, 'T' + catTool + ' slices with this filament; Prusa Connect records it on the tool', true));
+      if (r.source !== 'orca') row.appendChild(catButton(catTool ? 'Add only' : 'Add to slicer', r.key, 0, 'Add to the slicer\'s filament list without using it yet', false));
       list.appendChild(row);
     });
   }
-  function catButton(label, key, slot, title) {
+  // The chosen filament is another material type than the tool has loaded: the printer must unload and load.
+  function materialChange(m) {
+    var t = 'T' + m.tool;
+    $('mc-text').textContent = t + ' has ' + m.loaded_name + ' (' + m.loaded + ') loaded. You chose ' + m.chosen_name + ' (' + m.chosen + '). '
+      + 'The printer only accepts another material type after an unload and a load.';
+    text('mc-swap-t', 'Change the filament on ' + t + ' now');
+    text('mc-swap-s', m.can_swap ? 'The printer unloads ' + m.loaded + ' (the nozzle heats up). Then load ' + m.chosen
+      + ' from the printer\'s menu; the plugin records ' + m.chosen_name + ' on the tool once the printer reports ' + m.chosen + '.'
+      : m.printing ? 'Not while the printer is printing.' : 'Needs Prusa Connect: log in under Settings.');
+    $('mc-swap').disabled = !m.can_swap;
+    text('mc-orca-t', 'Only slice with it');
+    text('mc-orca-s', 'Sets slicer slot ' + m.tool + ' to ' + m.chosen_name + '. The printer keeps ' + m.loaded + ' and will warn at print start until you load ' + m.chosen + '.');
+    function answer(mode) { $('mc').classList.remove('on'); if (mode) post({ command: 'catalog_use', key: m.key, tool: m.tool, mode: mode }); }
+    $('mc-swap').onclick = function () { answer('swap'); };
+    $('mc-orca').onclick = function () { answer('orca'); };
+    $('mc-cancel').onclick = function () { answer(''); };
+    $('mc').classList.add('on');
+  }
+  function catButton(label, key, tool, title, primary) {
     var b = document.createElement('button'); b.textContent = label; b.title = title;
-    b.onclick = function () { post({ command: 'catalog_import', key: key, slot: slot }); };
+    if (primary) b.className = 'primary';
+    b.onclick = function () { post({ command: 'catalog_use', key: key, tool: tool }); };
     return b;
   }
 
@@ -829,7 +1029,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
     files: ['b-files'], 'list-printers': ['b-printers'], login: ['b-code', 'b-login'], fill: ['b-fill'],
     MOVE: ['#jog'], MOVE_Z: ['#jog'], HOME: ['#jog'], DISABLE_STEPPERS: ['b-motors'],
     SET_NOZZLE_TEMPERATURE: ['.set[data-cmd=SET_NOZZLE_TEMPERATURE]'], SET_HEATBED_TEMPERATURE: ['.set[data-cmd=SET_HEATBED_TEMPERATURE]'],
-    SET_SPEED: ['.set[data-cmd=SET_SPEED]'], 'tool-*': ['#tools-assign']
+    SET_SPEED: ['.set[data-cmd=SET_SPEED]'], SET_FLOW: ['.set[data-cmd=SET_FLOW]'], 'tool-*': ['#tools-assign']
   };
   function lockEls(sel) {
     return sel.charAt(0) === '#' || sel.charAt(0) === '.' ? [].slice.call(document.querySelectorAll(sel)) : [$(sel)].filter(Boolean);
@@ -894,7 +1094,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
   $('b-nz-preset').onclick = function () { post({ command: 'sync_nozzles', direction: 'to_preset', tools: nozzles.selected() }); };
   $('b-nz-printer').onclick = function () {
     var t = nozzles.selected();
-    if (confirm('Change the nozzle settings stored on the printer for ' + t.map(function (n) { return 'T' + n; }).join(', ') + ' to match the Orca preset?'))
+    if (confirm('Change the nozzle settings stored on the printer for ' + t.map(function (n) { return 'T' + n; }).join(', ') + ' to match the slicer preset?'))
       post({ command: 'sync_nozzles', direction: 'to_printer', tools: t });
   };
 
@@ -903,12 +1103,18 @@ PAGES_HTML = r"""<!DOCTYPE html>
     var p = !r.printer.loaded ? 'empty' : r.printer.color ? swatch(r.printer.color, label) : label + ' (no colour set)';
     var o = r.slot ? swatch(r.slot.color, r.slot.preset) : 'no slot';
     if (r.preset_differs) o.title = 'Matching preset: ' + r.match;
-    return { differs: r.preset_differs || r.color_differs, cols: ['T' + r.tool_number, p, o] };
+    if (r.type_differs) {
+      var w = document.createElement('span'); w.appendChild(o);
+      var b = document.createElement('small'); b.style.cssText = 'display:block;color:var(--danger)';
+      b.textContent = 'Slices ' + r.slot_type + ', the printer has ' + r.printer.material + ' loaded';
+      w.appendChild(b); o = w;
+    }
+    return { differs: r.preset_differs || r.color_differs || r.type_differs, cols: ['T' + r.tool_number, p, o] };
   });
   $('b-fs-orca').onclick = function () { post({ command: 'sync_filaments', direction: 'to_orca', tools: filaments.selected() }); };
   $('b-fs-printer').onclick = function () {
     var t = filaments.selected();
-    if (confirm('Record the Orca filament of ' + t.map(function (n) { return 'T' + n; }).join(', ') + ' on the printer in Prusa Connect?'))
+    if (confirm('Record the slicer filament of ' + t.map(function (n) { return 'T' + n; }).join(', ') + ' on the printer in Prusa Connect?'))
       post({ command: 'sync_filaments', direction: 'to_printer', tools: t });
   };
 
@@ -981,6 +1187,7 @@ PAGES_HTML = r"""<!DOCTYPE html>
     if (r && confirm('Print ' + r.file + ' again from the printer\'s storage now?')) post({ command: 'print_file', name: r.file });
   };
   $('b-test-notify').onclick = function () { post({ command: 'test_notify' }); };
+  $('s-follow').onchange = function () { post({ command: 'save_settings', patch: { filament: { follow_printer: $('s-follow').checked } }, quiet: true }); };
   $('hd-open').onclick = function () { post({ command: 'history_open', id: histSel }); };
   $('hd-delete').onclick = function () { if (histSel) { post({ command: 'history_remove', id: histSel }); histSel = ''; } };
 

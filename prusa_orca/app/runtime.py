@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import json
 import os
 import socket
 import threading
@@ -19,12 +20,13 @@ from ..backends.connect import ConnectBackend, TokenStore
 from ..backends.prusalink import PrusaLinkBackend
 from ..backends.snapshot_server import SnapshotServer
 from ..history import PrintHistory, PrintTracker
+from ..material_swap import PlannedSwap, swap_progress
 from ..materials import FilamentPreset, match_preset, pick_connect_material, tray_info_idx
 from ..model import PrinterTelemetry, ToolState
 from ..settings import Settings, default_data_dir
 from ..tasks import Task, TaskBusy, TaskRunner
 from .host import LOG, LogFormatter, orca
-from .notices import command_label, notify
+from .notices import command_label, notify, tell, warn
 
 
 class Runtime:
@@ -50,6 +52,9 @@ class Runtime:
         self.history = PrintHistory(os.path.join(data_dir, "history.json"))
         self.tracker = PrintTracker(self.history)
         self.listeners.append(self._track)
+        self.swaps_path = os.path.join(data_dir, "planned_swaps.json")
+        self.swaps: dict[int, PlannedSwap] = self._load_swaps()
+        self.listeners.append(self._finish_swaps)
         self.rebuild_backend()
 
     @property
@@ -76,6 +81,56 @@ class Runtime:
                 notify(event, record)
                 if event in ("first_layer", "finished", "stopped", "failed", "attention"):
                     self._keep_snapshot(record, event)
+
+    def _load_swaps(self) -> dict[int, PlannedSwap]:
+        try:
+            with open(self.swaps_path, encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            return {}
+        swaps = [s for d in (data if isinstance(data, list) else []) if (s := PlannedSwap.from_json(d))]
+        return {s.tool_number: s for s in swaps}
+
+    def _save_swaps(self) -> None:
+        tmp = self.swaps_path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump([s.to_json() for s in self.swaps.values()], f, indent=1)
+        os.replace(tmp, self.swaps_path)
+
+    def plan_swap(self, swap: PlannedSwap) -> None:
+        swap.started = time.time()
+        with self.lock:
+            self.swaps[swap.tool_number] = swap
+            self._save_swaps()
+
+    def cancel_swap(self, tool_number: int) -> bool:
+        with self.lock:
+            if self.swaps.pop(tool_number, None) is None:
+                return False
+            self._save_swaps()
+        return True
+
+    def _finish_swaps(self, snapshot: PrinterTelemetry | None) -> None:
+        """Record the planned spool in Connect once the printer reports its type on the tool; a menu load only sets the type."""
+        if snapshot is None or not snapshot.tools or not self.swaps:
+            return
+        for swap in list(self.swaps.values()):
+            tool = next((t for t in snapshot.tools if t.tool_number == swap.tool_number), None)
+            if tool is None:
+                continue
+            state = swap_progress(swap, tool.material, tool.is_loaded)
+            if state == "waiting":
+                continue
+            self.cancel_swap(swap.tool_number)
+            if state == "expired":
+                warn(f"T{swap.tool_number}: {swap.material} was not loaded within 45 minutes; {swap.title} was not recorded.")
+                continue
+            try:
+                assigned = self.assign_tool_material(tool.index, swap.vendor, swap.name, swap.material, swap.color)
+                LOG.info("T%d: loaded %s, recorded %s", swap.tool_number, swap.material, assigned)
+                tell(f"T{swap.tool_number}: {swap.material} loaded, recorded {assigned} in Prusa Connect.")
+            except Exception as exc:
+                warn(f"T{swap.tool_number}: {swap.material} loaded, but {swap.title} could not be recorded ({exc}).")
 
     def _keep_snapshot(self, record: dict[str, Any], event: str) -> None:
         image = self.snapshot_image()

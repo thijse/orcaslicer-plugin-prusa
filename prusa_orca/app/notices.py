@@ -32,6 +32,7 @@ COMMAND_LABELS = {
     "CANCEL_PRINTER_READY": "Cancelling ready",
     "SET_TOOL_NOZZLE_DIAMETER": "Changing tool settings",
     "SET_TOOL_HARDENED": "Changing tool settings",
+    "UNLOAD_FILAMENT": "Unloading filament",
 }
 
 
@@ -46,6 +47,17 @@ def warn(text: str) -> None:
         return
     try:
         orca.host.ui.push_notification(orca.host.ui.NotificationLevel.WarningNotificationLevel, f"Prusa: {text}")
+    except Exception:
+        LOG.exception("notification failed")
+
+
+def tell(text: str) -> None:
+    """An Orca info notification for something the plugin finished on its own."""
+    LOG.info("%s", text)
+    if orca is None:
+        return
+    try:
+        orca.host.ui.push_notification(orca.host.ui.NotificationLevel.PrintInfoNotificationLevel, f"Prusa: {text}")
     except Exception:
         LOG.exception("notification failed")
 
